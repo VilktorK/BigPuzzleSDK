@@ -23,9 +23,9 @@ public class PuzzleConfetti : MonoBehaviour {
     internal static readonly List<PuzzleConfetti> all = new List<PuzzleConfetti>();
 
     private readonly List<ParticleSystem> particles = new List<ParticleSystem>();
-    private bool fired;
+    private int fireCount;   // host: counts 1 to 100 and round again, one step for every Fire(); every other player fires once per step that arrives
 
-    // 1 once the host has fired it, so every other player fires theirs too (see SyncedValue in Plugin.cs)
+    // The host's fire counter, so every other player fires theirs too (see SyncedValue in Plugin.cs)
     private SyncedValue syncFired;
     private readonly List<AudioClip> clips = new List<AudioClip>();   // the vanilla confetti sound(s)
 
@@ -62,9 +62,11 @@ public class PuzzleConfetti : MonoBehaviour {
         GameObject copy = Templates.Clone(template, transform);
         copy.name = CopyName;
         copy.transform.localPosition = Vector3.zero;
-        // Keep the vanilla confetti's own facing (it is flipped to pour downwards), turned by
-        // however the creator rotated this object
-        copy.transform.rotation = transform.rotation * template.transform.rotation;
+        // Keep the vanilla confetti's own facing (it is flipped 180 degrees to pour downwards), turned by
+        // however the creator rotated this object. Only the template's own turn counts: its world rotation
+        // also holds the yaw of the place it hangs in (about its own pouring axis, so it changed nothing you could see
+        // except the model's spin).
+        copy.transform.rotation = transform.rotation * template.transform.localRotation;
         copy.SetActive(true);
 
         Vector3 parentScale = transform.lossyScale;
@@ -284,18 +286,27 @@ public class PuzzleConfetti : MonoBehaviour {
     private void Start() {
         all.Add(this);
         if (syncFired != null) {
-            syncFired.onChanged = v => { if (v == 1) Fire(); };   // other players: the host fired it
+            syncFired.onChanged = v => FireNow();   // other players: the host fired it (a player who joins later does not replay old shots: one-shot value)
             syncFired.Register();
         }
     }
 
     private void OnDestroy() { all.Remove(this); }
 
-    // Fires the confetti. Called by the puzzle's main class from Win().
-    internal void Fire() {
-        if (fired) return;
-        fired = true;
-        if (syncFired != null) syncFired.Push(1);
+    // Host only. Fires the confetti for every player, without calling Win(). It can be fired as often as you like.
+    // Win() calls this too.
+    public void Fire() {
+        if (!PuzzleSDK.IsHost) return;
+        if (syncFired != null) {
+            fireCount = fireCount % 100 + 1;
+            syncFired.Push(fireCount);
+        }
+        FireNow();
+    }
+
+    // Fires the confetti on this PC (the host's call reaches the other players through syncFired)
+    internal void FireNow() {
+        Plugin.log.LogInfo($"[PuzzleConfetti] '{name}' fired");
         int played = 0;
         foreach (ParticleSystem ps in particles) {
             if (ps == null) continue;

@@ -35,6 +35,10 @@ public class PuzzleProgressBar : MonoBehaviour {
     public void SetTotal(int value) { }
     // Host only. +1; does nothing once full.
     public void Increment() { }
+    // Host only. Sets the progress (0 to Total; outside is cut to it). Going up flashes the Increment look; reaching Total shows victory and fires OnFull once; going down shows the normal look.
+    public void SetProgress(int value) { }
+    // Host only. -1; does nothing at 0. A full bar stops being full.
+    public void Decrement() { }
     // Host only. Failure look for one second, then the bar empties (as Reset()).
     public void Fail() { }
     // Host only. Empty, normal look.

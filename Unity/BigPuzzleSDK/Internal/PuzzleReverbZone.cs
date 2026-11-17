@@ -38,7 +38,7 @@ public class PuzzleReverbZone : MonoBehaviour {
 
     private void OnDrawGizmos() {
         Gizmos.color = new Color(0.3f, 0.6f, 1f, 0.2f);
-        foreach (Collider c in GetComponents<Collider>()) Gizmos.DrawCube(c.bounds.center, c.bounds.size);
+        PuzzleZoneGizmo.Draw(this);
     }
 }
 

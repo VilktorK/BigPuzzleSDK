@@ -20,6 +20,9 @@ public class PuzzleDoor : MonoBehaviour {
     [Tooltip("Blocks players' voices while closed, like the game's soundproof doors. Voices pass once it opens.")]
     [SerializeField] private bool soundproof;
 
+    // Read-only for scripts: whether the door is open right now (the same on every PC)
+    public bool IsOpen => false;
+
     // Host only
     public void Open() { }
     public void Close() { }

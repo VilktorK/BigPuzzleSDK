@@ -27,7 +27,7 @@ using static PropertyBlockHelper;
 namespace BigPuzzleSDK {
     [BepInPlugin("markviews.BigPuzzleSDK", "Big Puzzle SDK", Version)]
     public class Plugin : BasePlugin {
-        internal const string Version = "0.1.5";
+        internal const string Version = "0.1.6";
 
         internal static ManualLogSource log;
 
@@ -1927,7 +1927,7 @@ namespace BigPuzzleSDK {
             return prop != null && moddedProps.Contains(prop.Pointer);
         }
 
-        internal static void Tint(GameObject go) {
+        internal static void Tint(GameObject go, Color color) {
             if (go == null) return;
             foreach (Component c in go.GetComponentsInChildren(Il2CppType.Of<PropertyBlockHelper>(), true)) {
                 PropertyBlockHelper helper = c != null ? c.TryCast<PropertyBlockHelper>() : null;
@@ -1936,7 +1936,7 @@ namespace BigPuzzleSDK {
                     var colors = helper.colorSettings;
                     for (int i = 0; colors != null && i < colors.Count; i++) {
                         ColorSetting cs = colors[i];
-                        cs.color = (cs.propertyName ?? "").ToLowerInvariant().Contains("emission") ? Color.black : Teal;
+                        cs.color = (cs.propertyName ?? "").ToLowerInvariant().Contains("emission") ? Color.black : color;
                         colors[i] = cs;
                     }
                     var floats = helper.floatSettings;

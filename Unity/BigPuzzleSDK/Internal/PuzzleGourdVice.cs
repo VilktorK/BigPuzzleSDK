@@ -11,6 +11,11 @@ namespace BigPuzzleSDK {
 [PuzzleInfo("Fires on PuzzleSDK.Win()")]
 [AddComponentMenu("")]   // hidden from Add Component: comes from the prefab
 public class PuzzleGourdVice : MonoBehaviour {
+    // Read-only for scripts: the vice has been released
+    public bool IsReleased => false;
+
+    // Host only. Opens the vice and lets the gourd go, without calling Win(). Does nothing if already released.
+    public void Release() { }
 }
 
 }

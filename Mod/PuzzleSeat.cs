@@ -48,8 +48,17 @@ public class PuzzleSeat : MonoBehaviour {
     internal static readonly List<PuzzleSeat> all = new List<PuzzleSeat>();
     private void Awake() { all.Add(this); }
     private void OnDestroy() { all.Remove(this); }
-    internal PlayerCharacter Occupant {
+    internal PlayerCharacter OccupantCharacter {
         get { try { return seat != null ? seat.occupant : null; } catch (Exception) { return null; } }
+    }
+
+    // Read-only for scripts: the player sitting in it, or null
+    [Il2CppInterop.Runtime.Attributes.HideFromIl2Cpp]
+    public PuzzlePlayer Occupant {
+        get {
+            foreach (PuzzlePlayer p in PlayerRoster.View) if (p != null && p.seat == this) return p;
+            return null;
+        }
     }
 
     // The game's seat animations and the camera / body offsets that go with each, in the enum's order

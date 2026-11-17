@@ -72,12 +72,24 @@ public class AllBoardsCorrect : MonoBehaviour {
 <td>Static. True on the host, and in single player.</td>
 </tr>
 <tr>
+<td><code>PuzzleSDK.Of(Transform)</code></td>
+<td>Static. The puzzle that owns an object, or null.</td>
+</tr>
+<tr>
 <td><code>PuzzleSDK.players</code></td>
 <td>Static. Read-only list of every player (see <a href="#players">Players</a>).</td>
 </tr>
 <tr>
 <td><code>Win()</code></td>
 <td>Host only. Fires every Confetti and releases every Gourd Vice, then <strong>On Win</strong>.</td>
+</tr>
+<tr>
+<td><code>StartPuzzle()</code></td>
+<td>Host only. Does what a player flipping the Start Switch on does: the switches move in the world for everyone and <strong>On Puzzle Start</strong> fires. Needs a Start Switch; does nothing if already running.</td>
+</tr>
+<tr>
+<td><code>StopPuzzle()</code></td>
+<td>Host only. The same for flipping it back: the switches move and <strong>On Puzzle Stop</strong> fires. Does nothing if not running.</td>
 </tr>
 <tr>
 <td><code>IsWon</code></td>

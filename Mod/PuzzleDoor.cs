@@ -218,6 +218,14 @@ public class PuzzleDoor : MonoBehaviour {
         }
     }
 
+    // Read-only for scripts: whether the door is open. Read from the door's own synced state, so it is right on every PC.
+    public bool IsOpen {
+        get {
+            if (door != null && PeckValue.TryRead(doorState, out int v)) return (v == 1) != door.peckAndDoorStatesAreInverse;
+            return open;
+        }
+    }
+
     // ---- Callable from code or from an Inspector event ----
     // Host only: the door reaches everyone from the host
     public void Open() { if (!PuzzleSDK.IsHost) return; open = true; }

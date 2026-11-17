@@ -21,6 +21,10 @@ public class PuzzleSDK : MonoBehaviour {
     [Tooltip("Puzzle: a challenge that rewards a gourd (needs one PuzzleGourdVice or one PuzzleBox to hold the gourd, and one PuzzlePillow). Tower: a gourd tower (needs at least 10 PuzzleGourdPlinths). None: anything else.")]
     [SerializeField] private PuzzleType puzzleType = PuzzleType.Puzzle;
 
+    [Tooltip("The colour of this puzzle's gourd (Vice or Box). Only used when Puzzle Type is Puzzle. The default is the usual modded teal.")]
+    [ColorUsage(false)]
+    [SerializeField] private Color gourdColor = new Color(0.15f, 0.75f, 0.7f, 1f);
+
     [Tooltip("A start switch was flipped on.")]
     [SerializeField] private UnityEvent onPuzzleStart;
 
@@ -40,8 +44,17 @@ public class PuzzleSDK : MonoBehaviour {
     // A player who leaves stays in their place with isOnline false (and comes back to it if they rejoin).
     public static IReadOnlyList<PuzzlePlayer> players => System.Array.Empty<PuzzlePlayer>();
 
+    // The puzzle (PuzzleSDK) that owns this object, or null. Handy for a script that has no reference to it.
+    public static PuzzleSDK Of(Transform t) { return t == null ? null : t.root.GetComponentInChildren<PuzzleSDK>(true); }
+
     // Called by the plugin class the exporter adds to your scripts DLL. Not for your own code.
     public static void RegisterAssemblyOf(object anyObject) { }
+
+    // Host only. Does what a player flipping the Start Switch on does: every Start Switch in this puzzle moves in the world (for every player) and OnPuzzleStart fires. Does nothing if already running, or if the puzzle has no Start Switch.
+    public void StartPuzzle() { }
+
+    // Host only. Does what a player flipping the Start Switch back does: the switches move and OnPuzzleStop fires. Does nothing if not running.
+    public void StopPuzzle() { }
 
     // Host only. Fires every PuzzleConfetti and releases every PuzzleGourdVice, then onWin. Does not stop the puzzle: players flip the Start Switch back for that.
     public void Win() { }

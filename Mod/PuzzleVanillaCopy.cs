@@ -1145,6 +1145,11 @@ public class PuzzleCountInput : PuzzleVanillaCopy {
     // ---- Callable from code or from an Inspector event ----
 
     // Host only. Sets the counter (kept between 0 and Max); fires On Value Changed if it changes.
+    public void Increment() { SetValue(Value + 1); }
+
+    // Host only. -1, kept at 0 or more
+    public void Decrement() { SetValue(Value - 1); }
+
     public void SetValue(int value) {
         if (!PuzzleSDK.IsHost || storage == null) return;
         int v = Mathf.Clamp(value, 0, Max);

@@ -38,6 +38,9 @@ public class PuzzleSeat : MonoBehaviour {
     // Read-only in the game
     public bool IsOccupied => false;
 
+    // Read-only for scripts: the player sitting in it, or null
+    public PuzzlePlayer Occupant => null;
+
     private void OnDrawGizmosSelected() {
         Gizmos.matrix = transform.localToWorldMatrix;
         Gizmos.color = new Color(0.2f, 0.5f, 1f, 0.35f);

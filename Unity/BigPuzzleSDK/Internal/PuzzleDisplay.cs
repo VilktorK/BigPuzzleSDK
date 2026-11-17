@@ -32,6 +32,24 @@ public class PuzzleDisplay : MonoBehaviour {
     // Read-only for scripts: the set being shown
     public PuzzleImageSet ImageSet => PuzzleImageSet.A;
 
+    // Read-only for scripts: how many flaps the display has (1, 2, 3 or 5)
+    public int FlapCount => size == PuzzleDisplaySize.Two ? 2 : size == PuzzleDisplaySize.Three ? 3 : size == PuzzleDisplaySize.Five ? 5 : 1;
+
+    // Read-only for scripts: the set shown on a flap (1 is the far left)
+    public PuzzleImageSet GetImageSet(int flap) { return PuzzleImageSet.A; }
+
+    // Host only. Flips a flap (1 is the far left) to an image of the set it shows (0 = blank). It flips in the world for every player. A display with Copy Display set does nothing. The puzzle's start deals new pictures and its stop blanks them.
+    public void SetImage(int flap, int image) { }
+
+    // Host only. As above, and switches the flap to another of the game's sets (not Custom).
+    public void SetImage(int flap, PuzzleImageSet set, int image) { }
+
+    // Host only. Every flap goes blank.
+    public void Clear() { }
+
+    // Host only. One flap (1 is the far left) goes blank.
+    public void Clear(int flap) { }
+
 }
 
 }

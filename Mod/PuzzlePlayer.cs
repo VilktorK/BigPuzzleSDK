@@ -66,7 +66,7 @@ public sealed class PuzzlePlayer {
             try {
                 foreach (PuzzleSeat s in PuzzleSeat.all) {
                     if (s == null) continue;
-                    PlayerCharacter sitter = s.Occupant;
+                    PlayerCharacter sitter = s.OccupantCharacter;
                     if (sitter != null && sitter.Pointer == pc.Pointer) return s;
                 }
             } catch (Exception) { }

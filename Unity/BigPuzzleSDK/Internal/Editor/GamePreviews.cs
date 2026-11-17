@@ -36,6 +36,7 @@ public static class GamePreviews {
     // One preview: a hidden, unparented object that follows its SDK component around
     private sealed class Preview {
         public GameObject root; public string key; public Vector3 worldScale; public bool followsScale; public Renderer placeholder;
+        public Quaternion turn = Quaternion.identity;   // how the game turns this template before the creator's rotation (the confetti is flipped to pour down)
         // PuzzleGlass: one glass copy per renderer, each following its own object (null for the others)
         public List<(Transform copy, Transform target)> followers;
         public List<Renderer> hidden;
@@ -128,7 +129,7 @@ public static class GamePreviews {
                 continue;
             }
             Transform t = c.transform;
-            p.root.transform.SetPositionAndRotation(t.position, t.rotation);
+            p.root.transform.SetPositionAndRotation(t.position, t.rotation * p.turn);
             p.root.transform.localScale = p.followsScale ? Vector3.Scale(p.worldScale, t.lossyScale) : p.worldScale;
         }
     }
@@ -333,6 +334,7 @@ public static class GamePreviews {
 
         var preview = new Preview {
             root = root, key = key,
+            turn = owner.GetType().Name == "PuzzleConfetti" ? Quaternion.Euler(0f, 0f, 180f) : Quaternion.identity,
             worldScale = new Vector3(template.worldScale.x, template.worldScale.y, template.worldScale.z),
             followsScale = Scalable.Contains(owner.GetType().Name),
         };

@@ -11,6 +11,8 @@ namespace BigPuzzleSDK {
 [PuzzleInfo("Fires on PuzzleSDK.Win()")]
 [AddComponentMenu("")]   // hidden from Add Component: comes from the prefab
 public class PuzzleConfetti : MonoBehaviour {
+    // Host only. Fires the confetti for every player, without calling Win(). Can be fired as often as you like.
+    public void Fire() { }
 }
 
 }

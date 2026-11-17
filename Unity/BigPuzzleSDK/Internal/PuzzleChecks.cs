@@ -783,7 +783,42 @@ internal class PuzzlePressInOrderEditor : PuzzleComponentEditor {
         EditorGUILayout.EndHorizontal();
     }
 }
-[CustomEditor(typeof(PuzzlePresenceSensor))] internal class PuzzlePresenceSensorEditor : PuzzleComponentEditor { }
+// Shows only the fields that apply to the chosen Type (a hidden field that already has something wired or set stays visible)
+[CustomEditor(typeof(PuzzlePresenceSensor))]
+internal class PuzzlePresenceSensorEditor : PuzzleComponentEditor {
+    private static bool HasCalls(SerializedProperty p) {
+        SerializedProperty calls = p.FindPropertyRelative("m_PersistentCalls.m_Calls");
+        return calls != null && calls.arraySize > 0;
+    }
+
+    public override void OnInspectorGUI() {
+        PuzzleChecks.DrawInfo((Component)target);
+        serializedObject.Update();
+        SerializedProperty type = serializedObject.FindProperty("type");
+        int kind = type != null ? type.enumValueIndex : 0;   // 0 Player, 1 AnyItem, 2 SpecificItem
+        SerializedProperty it = serializedObject.GetIterator();
+        for (bool enter = true; it.NextVisible(enter); enter = false) {
+            string path = it.propertyPath;
+            if (path == "m_Script") {
+                using (new EditorGUI.DisabledScope(true)) EditorGUILayout.PropertyField(it, true);
+                continue;
+            }
+            bool hide = false;
+            if (kind != 2 && path == "acceptedVanilla") hide = it.enumValueFlag == 0;
+            if (kind != 2 && path == "acceptedCustom") hide = it.arraySize == 0;
+            if (kind != 0 && (path == "onPlayerEntered" || path == "onPlayerLeft")) hide = !HasCalls(it);
+            if (kind == 0 && (path == "onItemEntered" || path == "onItemLeft")) hide = !HasCalls(it);
+            if (hide) continue;
+            // Only the label changes: the field is still called requiredPlayers, because that name is what packs save and the mod reads
+            if (path == "requiredPlayers")
+                EditorGUILayout.PropertyField(it, new GUIContent("Num Required", "Number of players or items required in the collider for OnPressed to run."), true);
+            else
+                EditorGUILayout.PropertyField(it, true);
+        }
+        serializedObject.ApplyModifiedProperties();
+        PuzzleChecks.DrawHelpBoxes((Component)target);
+    }
+}
 [CustomEditor(typeof(PuzzleValidator))] internal class PuzzleValidatorEditor : PuzzleComponentEditor { }
 [CustomEditor(typeof(PuzzleLight))] internal class PuzzleLightEditor : PuzzleComponentEditor { }
 [CustomEditor(typeof(PuzzleTimer))] internal class PuzzleTimerEditor : PuzzleComponentEditor { }

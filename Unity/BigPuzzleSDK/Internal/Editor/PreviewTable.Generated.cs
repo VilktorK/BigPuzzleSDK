@@ -194,7 +194,7 @@ internal static partial class PreviewTable {
             new Part("Lamp_Tube_wallmount", 408, new V3(0f, 0f, 0.11f), new Q(-0.706983f, 0f, 0f, 0.70723f), new V3(1f, 1f, 1f), new[] { Kind.VertexColor }),   // Lamp_Tube/Lamp_Tube_wallmount
         }),
         new Template("PuzzleLight Circle", new V3(1f, 1f, 1f), new Part[] {
-            new Part("TrainLightFlood", 422, new V3(0f, 0f, 0f), new Q(0f, 0f, 0f, 1f), new V3(1f, 1f, 1f), new[] { Kind.VertexColor }),   // 
+            new Part("TrainLightFlood", 422, new V3(0f, 0f, 0f), new Q(-0.707107f, 0f, 0f, 0.707107f), new V3(1f, 1f, 1f), new[] { Kind.VertexColor }),   // 
         }),
         new Template("PuzzleLight Ring", new V3(1f, 1f, 1f), new Part[] {
             new Part("BezierCircle.001", 674, new V3(0f, 0f, 0f), new Q(-0.706983f, 0f, 0f, 0.70723f), new V3(1f, 1f, 1f), new[] { Kind.VertexColor }),   // Lamp_Fluoro

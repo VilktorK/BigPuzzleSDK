@@ -130,8 +130,9 @@ namespace BigPuzzleSDK {
             syncReleased = new SyncedValue(transform, "vice released " + name);
 
             // Modded gourds are teal (both the display one and the real one)
-            foreach (GameObject visual in gourdVisuals) ModGourd.Tint(visual);
-            ModGourd.Tint(realGourd);
+            Color gourdColor = PuzzleSDK.GourdColorOf(transform);
+            foreach (GameObject visual in gourdVisuals) ModGourd.Tint(visual, gourdColor);
+            ModGourd.Tint(realGourd, gourdColor);
             ModGourd.MakeModdedProp(realGourd);   // fits modded holders only
 
             // The real gourd gets a fixed network id, so the host's spawn reaches every player
@@ -346,20 +347,20 @@ namespace BigPuzzleSDK {
 
             if (restoreAt > 0f && Time.time >= restoreAt) RestoreDoor();
             // Other players: open the vice when the host did (Win() runs on the host only)
-            if (hostReleased && !released && primed) Release();
+            if (hostReleased && !released && primed) ReleaseFollowingHost();
             // Other players: the host's save says this puzzle was won before: open and empty
             if (hostRestoredEmpty && !restoredEmpty && primed) {
                 restoredEmpty = true;
                 HideDisplayGourd();
                 launched = true;
-                if (!released) Release();
+                if (!released) ReleaseFollowingHost();
             }
 
             // Other players: Win() runs on the host only. When the host's real gourd arrives, hide
             // the display gourd it replaces.
             if (!NetworkServer.active && !launched && realGourd != null && realGourd.activeSelf) {
                 launched = true;
-                ModGourd.Tint(realGourd);   // once more now that it is awake
+                ModGourd.Tint(realGourd, PuzzleSDK.GourdColorOf(transform));   // once more now that it is awake
                 ModGourd.MakeModdedProp(realGourd);
                 foreach (GameObject visual in gourdVisuals) if (visual != null) visual.SetActive(false);
             }
@@ -442,9 +443,22 @@ namespace BigPuzzleSDK {
             } catch (Exception) { }
         }
 
+        // Whether the vice has been released (the same on every PC)
+        public bool IsReleased => released;
+
+        // Other players: the host released it, so this PC does too
+        private bool followingHost;
+        private void ReleaseFollowingHost() {
+            followingHost = true;
+            try { Release(); } finally { followingHost = false; }
+        }
+
         // Opens the vice and lets the gourd go. Called by the puzzle's main class from Win().
         // It does what a press of the vice's own victory switch would do, without needing a player.
-        internal void Release() {
+        // Host only for scripts: releases for every player (the other players' PCs follow through syncReleased).
+        // On another player's PC it does nothing, except when that PC is following the host (ReleaseFollowingHost).
+        public void Release() {
+            if (!PuzzleSDK.IsHost && !followingHost) return;
             var log = Plugin.log;
             if (released) { return; }
             if (victorySwitch == null) { log.LogWarning($"[PuzzleGourdVice] '{name}' cannot release: no victory switch"); return; }
@@ -579,7 +593,7 @@ namespace BigPuzzleSDK {
 
                 if (!NetworkServer.active) return false;   // the host's gourd will arrive by itself
                 if (!NetItems.Spawn(gourd)) return false;
-                ModGourd.Tint(gourd);   // once more now that it is awake
+                ModGourd.Tint(gourd, PuzzleSDK.GourdColorOf(transform));   // once more now that it is awake
                 ModGourd.MakeModdedProp(gourd);
                 followUntil = Time.time + FollowSeconds;   // see Update
                 nextFollow = Time.time + FollowInterval;

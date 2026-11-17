@@ -39,6 +39,20 @@ public class PuzzleSDK : MonoBehaviour {
     // Set in the Inspector: what this puzzle is (not used yet: for the modded gourd tower)
     internal PuzzleType puzzleType = PuzzleType.Puzzle;
 
+    // Set in the Inspector: the colour of this puzzle's gourd (teal unless the creator picked another)
+    internal Color gourdColor = ModGourd.Teal;
+
+    // The gourd colour of the puzzle that owns this object. Looked up through the root (not PuzzleSDK.all), because the
+    // gourd is set up while the puzzle is still asleep, before any PuzzleSDK has run Awake.
+    internal static Color GourdColorOf(Transform t) {
+        try {
+            Component c = t != null ? t.root.GetComponentInChildren(Il2CppType.Of<PuzzleSDK>(), true) : null;
+            PuzzleSDK p = c != null ? c.TryCast<PuzzleSDK>() : null;
+            if (p != null) { Color color = p.gourdColor; color.a = 1f; return color; }
+        } catch (Exception) { }
+        return ModGourd.Teal;
+    }
+
     // The puzzle's permanent id (from its pack), set by the loader: what the save file is keyed by
     internal string packId;
 
@@ -75,7 +89,7 @@ public class PuzzleSDK : MonoBehaviour {
     // Whether the puzzle that owns this object is switched on. A puzzle with no start switch is always
     // on; with one, it is on between StartPuzzle() and StopPuzzle() (Win() does not stop it).
     // The puzzle (PuzzleSDK) that owns this object, or null
-    internal static PuzzleSDK Of(Transform t) {
+    public static PuzzleSDK Of(Transform t) {
         if (t == null) return null;
         int root = t.root.GetInstanceID();
         foreach (PuzzleSDK p in all)
@@ -100,8 +114,34 @@ public class PuzzleSDK : MonoBehaviour {
         return true;
     }
 
-    // Starts the puzzle. Only the start switch calls this; creators react through onPuzzleStart.
-    internal void StartPuzzle() {
+    // Starts the puzzle, as if a player had flipped the Start Switch on: every Start Switch in this puzzle is moved in the
+    // world (for every player) and onPuzzleStart fires on every PC. Host only. Does nothing if it is already running. A puzzle
+    // needs a Start Switch for this; without one it never starts or stops.
+    public void StartPuzzle() { SetRunning(true); }
+
+    // Stops the puzzle, as if a player had flipped the Start Switch back: the switches move and onPuzzleStop fires on every PC.
+    // Host only. Does nothing if it is not running.
+    public void StopPuzzle() { SetRunning(false); }
+
+    private void SetRunning(bool want) {
+        if (!IsHost) return;   // the host decides for everyone
+        if (running == want) return;
+        int myRoot = transform.root.GetInstanceID();
+        var mine = new List<PuzzleStartSwitch>();
+        foreach (PuzzleStartSwitch s in PuzzleStartSwitch.all.ToArray())
+            if (s != null && s.transform.root.GetInstanceID() == myRoot) mine.Add(s);
+        if (mine.Count == 0) return;   // no Start Switch: nothing to move or sync, so nothing happens
+        foreach (PuzzleStartSwitch s in mine)
+            if (!s.CanFlip) return;   // not ready yet (it reads its default position half a second after spawning)
+
+        // The switches move in the world first, so what players see matches the state; the other players' own switches
+        // then start or stop their PCs. The host does it here, since its own switches were moved by this call.
+        foreach (PuzzleStartSwitch s in mine) s.FlipFromScript(want);
+        if (want) RunStart(); else RunStop();
+    }
+
+    // Starts the puzzle on this PC. The start switch calls this on every PC; creators react through onPuzzleStart.
+    internal void RunStart() {
         if (running) return;
         running = true;
         SetLiveSignals(true);
@@ -117,8 +157,8 @@ public class PuzzleSDK : MonoBehaviour {
             if (signal != null && signal.transform.root.GetInstanceID() == myRoot) signal.SetOn(lit);
     }
 
-    // Stops the puzzle. Called when the start switch is flipped back.
-    internal void StopPuzzle() {
+    // Stops the puzzle on this PC. Called by the start switch on every PC when it is flipped back.
+    internal void RunStop() {
         if (!running) return;
         running = false;
         SetLiveSignals(false);

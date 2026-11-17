@@ -29,7 +29,13 @@ public class PuzzleBox : MonoBehaviour {
     private bool open;
 
     // Read-only for scripts
-    public bool IsOpen => open;
+    // Read from the lid's own synced state, so it is right on every PC (not only the one that called Open())
+    public bool IsOpen {
+        get {
+            if (door != null && PeckValue.TryRead(lidState, out int v)) return (v == 1) != door.peckAndDoorStatesAreInverse;
+            return open;
+        }
+    }
 
     private LobbyDoor door;
     private TrackedPeckState lidState;
@@ -302,7 +308,7 @@ public class PuzzleBox : MonoBehaviour {
         realGourd = gourd;
         holdsGourd = true;
 
-        ModGourd.Tint(realGourd);              // modded gourds are teal
+        ModGourd.Tint(realGourd, PuzzleSDK.GourdColorOf(transform));   // the puzzle's gourd colour (teal unless set)
         ModGourd.MakeModdedProp(realGourd);    // fits modded holders only
         gourdNetId = NetItems.IdFor(transform, "gourd");
         NetItems.Prepare(realGourd, gourdNetId);   // the host's spawn reaches every player by this id
@@ -367,7 +373,7 @@ public class PuzzleBox : MonoBehaviour {
                 if (r != null) r.enabled = true;
             }
             if (!NetItems.Spawn(gourd)) return false;
-            ModGourd.Tint(gourd);
+            ModGourd.Tint(gourd, PuzzleSDK.GourdColorOf(transform));
             ModGourd.MakeModdedProp(gourd);
             PuzzleGourdVice.DetachFromVanillaHome(gourd);
             if (free) PuzzleGourdVice.FreeGourd(gourd);

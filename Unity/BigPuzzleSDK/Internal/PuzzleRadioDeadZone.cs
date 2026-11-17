@@ -14,7 +14,7 @@ namespace BigPuzzleSDK {
 public class PuzzleRadioDeadZone : MonoBehaviour {
     private void OnDrawGizmos() {
         Gizmos.color = new Color(1f, 0.35f, 0.1f, 0.25f);
-        foreach (Collider c in GetComponents<Collider>()) Gizmos.DrawCube(c.bounds.center, c.bounds.size);
+        PuzzleZoneGizmo.Draw(this);
     }
 }
 

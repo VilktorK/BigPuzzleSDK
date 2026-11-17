@@ -116,7 +116,7 @@ public static class ProjectThumbnails {
             Transform t = c.transform;
             var world = new Vector3(template.worldScale.x, template.worldScale.y, template.worldScale.z);
             Vector3 scale = GamePreviews.Scalable.Contains(c.GetType().Name) ? Vector3.Scale(world, t.lossyScale) : world;
-            Matrix4x4 root = Matrix4x4.TRS(t.position, t.rotation, scale);
+            Matrix4x4 root = Matrix4x4.TRS(t.position, c.GetType().Name == "PuzzleConfetti" ? t.rotation * Quaternion.Euler(0f, 0f, 180f) : t.rotation, scale);   // (the confetti is flipped to pour down)
             foreach (Part part in template.parts) {
                 Matrix4x4 partMatrix = root * Matrix4x4.TRS(
                     new Vector3(part.position.x, part.position.y, part.position.z),

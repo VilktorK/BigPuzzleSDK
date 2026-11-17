@@ -18,6 +18,12 @@ public class PuzzleCountInput : MonoBehaviour {
     // Read-only for scripts: the number on the counter
     public int Value => 0;
 
+    // Host only. +1, kept at 99 or less.
+    public void Increment() { }
+
+    // Host only. -1, kept at 0 or more.
+    public void Decrement() { }
+
     // Host only. Sets the counter (kept between 0 and 99).
     public void SetValue(int value) { }
 }

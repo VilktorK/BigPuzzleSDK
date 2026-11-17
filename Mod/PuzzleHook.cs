@@ -151,7 +151,7 @@ public class PuzzleHook : PuzzleVanillaCopy {
         return (effective & KindOf(prop)) != 0;
     }
 
-    private static PuzzleHookAccepts KindOf(Prop prop) {
+    internal static PuzzleHookAccepts KindOf(Prop prop) {
         if (itemKinds.TryGetValue(prop.Pointer, out PuzzleVanillaItemType known)) return FlagOf(known);
         try {
             var groups = prop.propGroups;

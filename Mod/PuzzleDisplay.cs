@@ -71,9 +71,6 @@ public class PuzzleDisplay : MonoBehaviour {
         }
     }
 
-    // How many flaps this display really has (0 if there was no frame to copy)
-    internal int FlapCount => flaps.Length;
-
     // Read-only for scripts: the image number being shown on flap 1 (or flipped towards); 0 is blank
     public int Image => flaps.Length > 0 ? flaps[0].image : 0;
 
@@ -82,8 +79,42 @@ public class PuzzleDisplay : MonoBehaviour {
         return flap >= 1 && flap <= flaps.Length ? flaps[flap - 1].image : 0;
     }
 
+    // How many flaps this display really has (1, 2, 3 or 5; 0 if there was no frame to copy)
+    public int FlapCount => flaps.Length;
+
     // Read-only for scripts: flap 1's set
-    internal PuzzleImageSet ImageSet { [Il2CppInterop.Runtime.Attributes.HideFromIl2Cpp] get { return flaps.Length > 0 ? flaps[0].imageSet : PuzzleImageSet.A; } }
+    public PuzzleImageSet ImageSet { [Il2CppInterop.Runtime.Attributes.HideFromIl2Cpp] get { return flaps.Length > 0 ? flaps[0].imageSet : PuzzleImageSet.A; } }
+
+    // Read-only for scripts: the set shown on a flap (1 is the far left); A when there is no such flap
+    [Il2CppInterop.Runtime.Attributes.HideFromIl2Cpp]
+    public PuzzleImageSet GetImageSet(int flap) { return flap >= 1 && flap <= flaps.Length ? flaps[flap - 1].imageSet : PuzzleImageSet.A; }
+
+    // Host only. Flips a flap (1 is the far left) to an image number of the set it already shows (0 = blank). The flap flips in the
+    // world for every player. A display that copies another does nothing (it follows its source); the puzzle's start deals
+    // new pictures and its stop blanks them, replacing what you set here.
+    [Il2CppInterop.Runtime.Attributes.HideFromIl2Cpp]
+    public void SetImage(int flap, int image) {
+        if (!PuzzleSDK.IsHost || copyDisplay != null) return;
+        if (flap < 1 || flap > flaps.Length) { BigPuzzleSDK.Plugin.log.LogWarning($"[PuzzleDisplay] '{name}' has no flap {flap} (it has {flaps.Length})."); return; }
+        flaps[flap - 1].SetImage(image);
+    }
+
+    // Host only. As above, but also switches the flap to another of the game's image sets. Custom is not allowed
+    // (a custom sheet comes from a Peg Tile).
+    [Il2CppInterop.Runtime.Attributes.HideFromIl2Cpp]
+    public void SetImage(int flap, PuzzleImageSet set, int image) {
+        if (!PuzzleSDK.IsHost || copyDisplay != null) return;
+        if (flap < 1 || flap > flaps.Length) { BigPuzzleSDK.Plugin.log.LogWarning($"[PuzzleDisplay] '{name}' has no flap {flap} (it has {flaps.Length})."); return; }
+        if (set == PuzzleImageSet.Custom) { BigPuzzleSDK.Plugin.log.LogWarning($"[PuzzleDisplay] '{name}': a script cannot choose the Custom set."); return; }
+        flaps[flap - 1].SetSetAndImage(set, image);
+    }
+
+    // Host only. Every flap goes blank.
+    public void Clear() { ShowBlank(); }
+
+    // Host only. One flap (1 is the far left) goes blank; the others keep their picture.
+    [Il2CppInterop.Runtime.Attributes.HideFromIl2Cpp]
+    public void Clear(int flap) { ShowBlank(flap - 1); }
 
     // The picture on a flap (0 is the first) and its set; 0 / A when there is no such flap
     internal int ImageAt(int flap) { return flap >= 0 && flap < flaps.Length ? flaps[flap].image : 0; }
@@ -560,6 +591,15 @@ public class PuzzleDisplay : MonoBehaviour {
             } catch (Exception ex) {
                 BigPuzzleSDK.Plugin.log.LogWarning($"[PuzzleDisplay] '{Label}' could not show image {number}: {ex.GetType().Name}: {ex.Message}");
             }
+        }
+
+        // Host only. Switches to one of the game's own sets and flips to an image of it
+        internal void SetSetAndImage(PuzzleImageSet set, int number) {
+            if (imageSet != set) {
+                imageSet = set;
+                setApplied = false;   // SetImage passes the new set on to the game
+            }
+            SetImage(number);
         }
 
         // Host only. Shows this tile's picture (its image set, its number and, for Custom, its sheet).

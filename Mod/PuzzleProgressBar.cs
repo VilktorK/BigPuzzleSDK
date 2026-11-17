@@ -287,6 +287,35 @@ public class PuzzleProgressBar : MonoBehaviour {
         state = PuzzleBarState.Standard;
     }
 
+    // Sets the progress directly (0 to Total; anything outside is cut to it). Going up shows the brief "Increment" look,
+    // reaching Total shows the victory look and fires onFull (only if it was not already full), going down shows the standard look.
+    // The bar in the world moves for every player.
+    public void SetProgress(int value) {
+        if (!PuzzleSDK.IsHost) return;
+        int wanted = Mathf.Clamp(value, 0, total);
+        if (wanted == current) return;
+        bool wasFull = current >= total;
+        bool up = wanted > current;
+        current = wanted;
+        failResetAt = -1f;
+        backToStandardAt = -1f;
+        if (current >= total) {
+            state = PuzzleBarState.Victory;
+            if (!wasFull && onFull != null) onFull.Invoke();
+        } else if (up) {
+            state = PuzzleBarState.Increment;
+            backToStandardAt = Time.time + IncrementLookSeconds;
+        } else {
+            state = PuzzleBarState.Standard;
+        }
+    }
+
+    // Takes one away (standard look); does nothing at 0. A full bar stops being full.
+    public void Decrement() {
+        if (!PuzzleSDK.IsHost) return;
+        SetProgress(current - 1);
+    }
+
     // Empties the bar and returns it to the standard look
     public void Reset() { if (!PuzzleSDK.IsHost) return; backToStandardAt = -1f; failResetAt = -1f; current = 0; state = PuzzleBarState.Standard; }
 

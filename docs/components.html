@@ -51,6 +51,10 @@
 <td>Puzzle Type</td>
 <td><code>Puzzle</code>: rewards a gourd (needs one Gourd Vice or one Box to hold the gourd, and one Pillow). <code>Tower</code>: a gourd tower (needs 10+ Gourd Plinths). <code>None</code>: anything else.</td>
 </tr>
+<tr>
+<td>Gourd Color</td>
+<td>The color of this puzzle's gourd, whether a Gourd Vice or a Box holds it. Only used when Puzzle Type is <code>Puzzle</code>. Defaults to the usual modded teal, so you can color harder puzzles differently, like the base game.</td>
+</tr>
 </tbody>
 </table></div>
 <div class="table-wrap"><table>
@@ -115,6 +119,7 @@
 <p><code>PuzzleGourdVice</code></p>
 <figure class="shot" data-path="images/components/gourd-vice.png"><img src="images/components/gourd-vice.png" alt="Gourd Vice" loading="lazy" onerror="this.parentElement.classList.add('empty');this.remove()"><figcaption>Image goes here: <code>docs/images/components/gourd-vice.png</code></figcaption></figure>
 <p>The game's gourd vice. <code>PuzzleSDK.Win()</code> releases it. Every <code>Puzzle</code> needs either a Gourd Vice or a <a href="#box">Box</a> to hold its gourd, not both.</p>
+<p>For scripts: <code>Release()</code> (host only) releases it without calling <code>Win()</code>; <code>IsReleased</code> (bool) is the same on every PC.</p>
 <h3 id="box">Box</h3>
 <p><code>PuzzleBox</code></p>
 <figure class="shot" data-path="images/components/box.png"><img src="images/components/box.png" alt="Box" loading="lazy" onerror="this.parentElement.classList.add('empty');this.remove()"><figcaption>Image goes here: <code>docs/images/components/box.png</code></figcaption></figure>
@@ -168,10 +173,11 @@
 <p><code>PuzzleConfetti</code></p>
 <figure class="shot" data-path="images/components/confetti.png"><img src="images/components/confetti.png" alt="Confetti" loading="lazy" onerror="this.parentElement.classList.add('empty');this.remove()"><figcaption>Image goes here: <code>docs/images/components/confetti.png</code></figcaption></figure>
 <p>The game's confetti cannon. <code>PuzzleSDK.Win()</code> fires it.</p>
+<p>For scripts: <code>Fire()</code> (host only) fires it for every player without calling <code>Win()</code>. It can be fired as often as you like.</p>
 <h3 id="door">Door</h3>
 <p><code>PuzzleDoor</code></p>
 <figure class="shot" data-path="images/components/door.png"><img src="images/components/door.png" alt="Door" loading="lazy" onerror="this.parentElement.classList.add('empty');this.remove()"><figcaption>Image goes here: <code>docs/images/components/door.png</code></figcaption></figure>
-<p>The game's double door.</p>
+<p>The game's double door. <code>IsOpen</code> (bool) tells whether it is open right now, the same on every PC.</p>
 <div class="table-wrap"><table>
 <thead>
 <tr>
@@ -348,6 +354,10 @@
 <tr>
 <td><code>IsOccupied</code> (bool)</td>
 <td>A player is sitting in it.</td>
+</tr>
+<tr>
+<td><code>Occupant</code> (PuzzlePlayer)</td>
+<td>The player sitting in it, or null.</td>
 </tr>
 </tbody>
 </table></div>
@@ -858,6 +868,41 @@
 <td><code>ImageSet</code> (PuzzleImageSet)</td>
 <td>The set shown.</td>
 </tr>
+<tr>
+<td><code>FlapCount</code> (int)</td>
+<td>How many flaps it has (1, 2, 3 or 5).</td>
+</tr>
+<tr>
+<td><code>GetImageSet(int flap)</code></td>
+<td>The set shown on a flap (1 is the far left).</td>
+</tr>
+</tbody>
+</table></div>
+<p>These change what the display shows. Host only; the flap flips in the world for every player. A display with Copy Display set ignores them. The puzzle's start deals new pictures and its stop blanks them, replacing what you set.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Function</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>SetImage(int flap, int image)</code></td>
+<td>Flips a flap (1 is the far left) to an image of the set it shows (0 = blank).</td>
+</tr>
+<tr>
+<td><code>SetImage(int flap, PuzzleImageSet set, int image)</code></td>
+<td>The same, and switches the flap to another of the game's sets (not Custom).</td>
+</tr>
+<tr>
+<td><code>Clear()</code></td>
+<td>Every flap goes blank.</td>
+</tr>
+<tr>
+<td><code>Clear(int flap)</code></td>
+<td>One flap goes blank.</td>
+</tr>
 </tbody>
 </table></div>
 <h3 id="peg-board">Peg Board</h3>
@@ -1110,6 +1155,10 @@ if (s.Type == PuzzlePegType.Sound) Debug.Log("sound " + s.Sound);
 <td><code>SetValue(int value)</code></td>
 <td>Host only. Kept between 0 and 99.</td>
 </tr>
+<tr>
+<td><code>Increment()</code> / <code>Decrement()</code></td>
+<td>Host only. +1 / -1, kept between 0 and 99.</td>
+</tr>
 </tbody>
 </table></div>
 <h3 id="count-validator">Count Validator</h3>
@@ -1351,6 +1400,14 @@ if (s.Type == PuzzlePegType.Sound) Debug.Log("sound " + s.Sound);
 <tr>
 <td><code>Increment()</code></td>
 <td>Host only. +1, nothing once full.</td>
+</tr>
+<tr>
+<td><code>Decrement()</code></td>
+<td>Host only. -1, nothing at 0. A full bar stops being full.</td>
+</tr>
+<tr>
+<td><code>SetProgress(int value)</code></td>
+<td>Host only. Sets the progress (0 to Total; outside is cut to it). Going up flashes the Increment look; reaching Total shows victory and fires <strong>On Full</strong> once; going down shows the normal look.</td>
 </tr>
 <tr>
 <td><code>Fail()</code></td>
@@ -1745,7 +1802,7 @@ if (s.Type == PuzzlePegType.Sound) Debug.Log("sound " + s.Sound);
 </table></div>
 <h3 id="presence-sensor">Presence Sensor</h3>
 <p><code>PuzzlePresenceSensor</code></p>
-<p>A button players press by standing in it. Add a Box (or other) Collider, at least 2 m tall and starting at the floor. It becomes an invisible trigger in-game. Works wherever a button does, including <a href="#press-in-order">Press In Order</a>.</p>
+<p>A button players press by standing in it, or by items being inside it (see Type). Add a Box (or other) Collider. For players, make it at least 2 m tall and starting at the floor. It becomes an invisible trigger in-game. Works wherever a button does, including <a href="#press-in-order">Press In Order</a>.</p>
 <div class="table-wrap"><table>
 <thead>
 <tr>
@@ -1755,8 +1812,20 @@ if (s.Type == PuzzlePegType.Sound) Debug.Log("sound " + s.Sound);
 </thead>
 <tbody>
 <tr>
-<td>Required Players</td>
-<td>Players needed inside at once. Default 1.</td>
+<td>Type</td>
+<td><code>Player</code> (default): players standing inside. <code>Any Item</code>: any item a player can pick up, including vanilla items, pegs and gourds. <code>Specific Item</code>: only the items you choose in Accepted Vanilla and Accepted Custom.</td>
+</tr>
+<tr>
+<td>Num Required</td>
+<td>Players needed inside at once. For the item types, items needed inside at once. Default 1.</td>
+</tr>
+<tr>
+<td>Accepted Vanilla</td>
+<td>Specific Item only. Which Vanilla Item types count (tick as many as you like).</td>
+</tr>
+<tr>
+<td>Accepted Custom</td>
+<td>Specific Item only. Drag in the Custom Items that count.</td>
 </tr>
 </tbody>
 </table></div>
@@ -1783,6 +1852,14 @@ if (s.Type == PuzzlePegType.Sound) Debug.Log("sound " + s.Sound);
 <tr>
 <td>On Player Left</td>
 <td>A player steps out.</td>
+</tr>
+<tr>
+<td>On Item Entered</td>
+<td>Any Item / Specific Item: an item comes inside, even if it only passes through. Count these for things like "N hits".</td>
+</tr>
+<tr>
+<td>On Item Left</td>
+<td>Any Item / Specific Item: an item leaves, or is picked up.</td>
 </tr>
 </tbody>
 </table></div>

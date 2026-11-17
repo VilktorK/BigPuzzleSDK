@@ -190,7 +190,7 @@ public class PuzzleStartSwitch : MonoBehaviour {
 
         PuzzleSDK puzzle = FindPuzzle();
         if (puzzle == null) { Plugin.log.LogWarning($"[PuzzleStartSwitch] '{name}' found no PuzzleSDK in its puzzle"); return; }
-        if (on) puzzle.StartPuzzle(); else puzzle.StopPuzzle();
+        if (on) puzzle.RunStart(); else puzzle.RunStop();
     }
 
     // Moves this switch to match one a player flipped, without starting or stopping anything
@@ -206,6 +206,16 @@ public class PuzzleStartSwitch : MonoBehaviour {
         } catch (Exception ex) {
             Plugin.log.LogWarning($"[PuzzleStartSwitch] '{name}' could not follow: {ex.GetType().Name}: {ex.Message}");
         }
+    }
+
+    // Whether a script can flip this switch yet (its default position has been read)
+    internal bool CanFlip { get { return defaultKnown && knobState != null; } }
+
+    // A script started or stopped the puzzle (host only): moves this knob in the world, which the game sends to every
+    // other player, and whose own PC then starts or stops the puzzle. Does not start or stop anything itself.
+    internal void FlipFromScript(bool wantOn) {
+        if (!CanFlip) return;
+        Follow(wantOn);
     }
 
     private PuzzleSDK FindPuzzle() {
