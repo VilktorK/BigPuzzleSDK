@@ -29,6 +29,13 @@ internal static partial class PreviewTable {
             new Part("door_folding_panel", 68, new V3(-0.555f, 0f, 0f), new Q(-0.499913f, -0.500087f, -0.499913f, 0.500087f), new V3(1f, 1f, 1f), new[] { Kind.VertexColor }),   // DoorAnimatingParent/door_folding/door_folding_panel_R2
             new Part("door_folding_panel", 68, new V3(-0.585f, 0f, 0f), new Q(-0.499913f, -0.500087f, -0.499913f, 0.500087f), new V3(1f, 1f, 1f), new[] { Kind.VertexColor }),   // DoorAnimatingParent/door_folding/door_folding_panel_R1
         }),
+        new Template("PuzzleDoor Soundproof", new V3(1f, 1f, 1f), new Part[] {
+            new Part("door_folding_frame_soundproof", 496, new V3(0f, 0f, 0f), new Q(-0.706983f, 0f, 0f, 0.70723f), new V3(1f, 1f, 1f), new[] { Kind.VertexColor }),   // DoorAnimatingParent/door_folding/door_folding_frame_soundproof
+            new Part("door_folding_panelsoundproof", 360, new V3(0.585f, 0f, 0f), new Q(-0.499913f, 0.500087f, 0.499913f, 0.500087f), new V3(1f, 1f, 1f), new[] { Kind.VertexColor, Kind.VertexColor }),   // DoorAnimatingParent/door_folding/door_folding_panel_L1
+            new Part("door_folding_panelsoundproof", 360, new V3(0.555f, 0f, 0f), new Q(-0.499913f, 0.500087f, 0.499913f, 0.500087f), new V3(1f, 1f, 1f), new[] { Kind.VertexColor, Kind.VertexColor }),   // DoorAnimatingParent/door_folding/door_folding_panel_L2
+            new Part("door_folding_panelsoundproof", 360, new V3(-0.555f, 0f, 0f), new Q(-0.499913f, -0.500087f, -0.499913f, 0.500087f), new V3(1f, 1f, 1f), new[] { Kind.VertexColor, Kind.VertexColor }),   // DoorAnimatingParent/door_folding/door_folding_panel_R2
+            new Part("door_folding_panelsoundproof", 360, new V3(-0.585f, 0f, 0f), new Q(-0.499913f, -0.500087f, -0.499913f, 0.500087f), new V3(1f, 1f, 1f), new[] { Kind.VertexColor, Kind.VertexColor }),   // DoorAnimatingParent/door_folding/door_folding_panel_R1
+        }),
         new Template("PuzzleGourdPlinth", new V3(1f, 1f, 1f), new Part[] {
             new Part("GourdMonument_tower_1slot", 1104, new V3(0f, 0f, 0f), new Q(-0.706983f, 0f, 0f, 0.70723f), new V3(1f, 1f, 1f), new[] { Kind.VertexColor, Kind.VertexColor }),   // GourdMonument_tower_1slot (1)
             new Part("GourdMonument_flap", 948, new V3(0f, 0.828068f, -0.240397f), new Q(-0.55557f, 0f, 0f, 0.83147f), new V3(1f, 1f, 1f), new[] { Kind.VertexColor, Kind.Glass }),   // GourdPin/AnimatingParts/GourdMonument_flap (1)
@@ -92,6 +99,18 @@ internal static partial class PreviewTable {
         new Template("PuzzlePegBoard 12 Marker", new V3(1f, 1f, 1f), new Part[] {
             new Part("PegBoard_12slot", 1811, new V3(-0.9f, 0f, 0f), new Q(-0.706983f, 0f, 0f, 0.70723f), new V3(1f, 1f, 1f), new[] { Kind.VertexColor }),   // PegBoard/PegBoard_12slot
             new Part("PegBoard_startmarker", 506, new V3(0f, 0f, 0f), new Q(-0.706983f, 0f, 0f, 0.70723f), new V3(1f, 1f, 1f), new[] { Kind.VertexColor }),   // PegBoard/PegBoard_startmarker
+        }),
+        new Template("PuzzlePegBoard Hoister", new V3(1f, 1f, 1f), new Part[] {
+            new Part("frame", 312, new V3(0f, 0f, 0f), new Q(-0.706983f, 0f, 0f, 0.70723f), new V3(1f, 1f, 1f), new[] { Kind.VertexColor, Kind.VertexColor }),   // HoistGroupAndLogic/Hoister/hoister/frame
+            new Part("pulley 0.75", 1064, new V3(-1.824f, 8.425f, 0f), new Q(-0.706983f, 0f, 0f, 0.70723f), new V3(1f, 1f, 1f), new[] { Kind.VertexColor }),   // hoister/pulley 0.75
+            new Part("pulley 1.0", 1064, new V3(-0.125f, 8.817f, 0f), new Q(-0.706983f, 0f, 0f, 0.70723f), new V3(1f, 1f, 1f), new[] { Kind.VertexColor }),   // hoister/pulley 1.0
+            new Part("pulley 1.3", 1112, new V3(-2.084f, 0.792f, 0f), new Q(-0.706983f, 0f, 0f, 0.70723f), new V3(1f, 1f, 1f), new[] { Kind.VertexColor }),   // hoister/pulley 1.3
+            new Part("slide", 742, new V3(0f, 0f, 0f), new Q(-0.706983f, 0f, 0f, 0.70723f), new V3(1f, 1f, 1f), new[] { Kind.VertexColor }),   // hoister/slide
+            new Part("PegBoard_12slot", 1811, new V3(0.223f, 1.1f, -0.1f), new Q(-0.706983f, 0f, 0f, 0.70723f), new V3(1f, 1f, 1f), new[] { Kind.VertexColor }),   // hoister/slide/PegBoard12Slot/PegBoard/PegBoard_12slot
+            new Part("staticString", 539, new V3(0f, 0f, 0f), new Q(-0.706983f, 0f, 0f, 0.70723f), new V3(1f, 1f, 1f), new[] { Kind.VertexColor }),   // hoister/staticString
+            new Part("stretchyString", 32, new V3(0f, 0f, 0f), new Q(-0.706983f, 0f, 0f, 0.70723f), new V3(1f, 1f, 1f), new[] { Kind.VertexColor }),   // hoister/stretchyString
+            new Part("backing", 160, new V3(-2.076f, 0.43f, 0.178f), new Q(-0.706983f, 0f, 0f, 0.70723f), new V3(1f, 1f, 1f), new[] { Kind.VertexColor }),   // BasicKnob Hoist/rotatingSwitch/backing
+            new Part("knob", 357, new V3(-2.076f, 0.43f, 0.178f), new Q(-0.5f, 0.5f, -0.5f, 0.5f), new V3(1f, 1f, 1f), new[] { Kind.VertexColor }),   // BasicKnob Hoist/rotatingSwitch/knobState0
         }),
         new Template("PuzzleButtonNHold 2", new V3(1f, 1f, 1f), new Part[] {
             new Part("Button-nHold-Button", 247, new V3(0f, -0.015f, 0f), new Q(-0.706983f, 0f, 0f, 0.70723f), new V3(1f, 1f, 1f), new[] { Kind.VertexColor }),   // Button-nHold-Four/Button-nHold-Button
@@ -232,6 +251,18 @@ internal static partial class PreviewTable {
         new Template("PuzzleIntercomSpeaker", new V3(1f, 1f, 1f), new Part[] {
             new Part("Speaker-wallmounted", 1469, new V3(0f, 0f, 0f), new Q(-0.706983f, 0f, 0f, 0.70723f), new V3(1f, 1f, 1f), new[] { Kind.VertexColor, Kind.VertexColor, Kind.VertexColor }),   // speaker-wallmounted
         }),
+        new Template("PuzzleListeningChair", new V3(1f, 1f, 1f), new Part[] {
+            new Part("amplifier", 2120, new V3(-0.8f, 0.495f, -0.05f), new Q(-0.706983f, 0f, 0f, 0.70723f), new V3(1f, 1f, 1f), new[] { Kind.VertexColor, Kind.VertexColor }),   // chair_tall/amplifier
+            new Part("chair_tall", 1044, new V3(0f, 0f, 0f), new Q(-0.706983f, 0f, 0f, 0.70723f), new V3(1f, 1f, 1f), new[] { Kind.VertexColor, Kind.VertexColor }),   // chair_tall/chair_tall
+            new Part("headphones_unworn", 1444, new V3(0f, 1.195f, -0.16f), new Q(-0.706983f, 0f, 0f, 0.70723f), new V3(1f, 1f, 1f), new[] { Kind.VertexColor }),   // chair_tall/headphones_unworn
+            new Part("headphonestand", 988, new V3(0f, 0f, -0.64f), new Q(-0.706983f, 0f, 0f, 0.70723f), new V3(1f, 1f, 1f), new[] { Kind.VertexColor }),   // chair_tall/headphonestand
+            new Part("headphonestand_cord", 1113, new V3(0f, 1.24f, -0.64f), new Q(0f, -0.707107f, 0f, 0.707107f), new V3(1f, 1f, 1f), new[] { Kind.VertexColor }),   // chair_tall/headphonestand_cord
+            new Part("sidetable", 440, new V3(-0.8f, 0.484f, -0.05f), new Q(-0.706983f, 0f, 0f, 0.70723f), new V3(1f, 1f, 1f), new[] { Kind.VertexColor }),   // chair_tall/sidetable
+        }),
+        new Template("PuzzleDirectionalMic", new V3(1f, 1f, 1f), new Part[] {
+            new Part("Mic", 3431, new V3(0f, 0.089f, -0.15f), new Q(0f, 0.81915f, 0.57358f, 0f), new V3(1f, 1f, 1f), new[] { Kind.VertexColor, Kind.VertexColor }),   // microphone-studio/Mic
+            new Part("MicStand", 472, new V3(0f, 0f, 0f), new Q(0f, 0.707107f, 0.707107f, 0f), new V3(1f, 1f, 1f), new[] { Kind.VertexColor, Kind.VertexColor }),   // microphone-studio/MicStand
+        }),
         new Template("PuzzleSoundPeg", new V3(1f, 1f, 1f), new Part[] {
             new Part("pegtile_speaker", 1042, new V3(0f, 0f, 0f), new Q(-0.706983f, 0f, 0f, 0.70723f), new V3(1f, 1f, 1f), new[] { Kind.VertexColor, Kind.VertexColor, Kind.VertexColor }),   // Kernal/pegtile_speaker
         }),
@@ -276,6 +307,16 @@ internal static partial class PreviewTable {
             new Part("dispenser", 2942, new V3(0f, 0f, 0f), new Q(-0.707107f, 0f, 0f, 0.707107f), new V3(1f, 1f, 1f), new[] { Kind.VertexColor }),   // PomodoroDispenserAnimator/AutomaticPitcher/dispenser
             new Part("ball_bottom", 494, new V3(0f, 1.017f, 0.25f), new Q(-0.706983f, 0f, 0f, 0.70723f), new V3(1f, 1f, 1f), new[] { Kind.VertexColor, Kind.VertexColor }),   // PomodoroDispenserAnimator/PomodoroDispenserHomeDispenser/Pomodoro/Kernal/pomodoro/ball_bottom
             new Part("ball_top", 637, new V3(0f, 1.017f, 0.25f), new Q(-0.707107f, 0f, 0f, 0.707107f), new V3(1f, 1f, 1f), new[] { Kind.VertexColor, Kind.VertexColor }),   // PomodoroDispenserAnimator/PomodoroDispenserHomeDispenser/Pomodoro/Kernal/pomodoro/ball_top
+        }),
+        new Template("PuzzleTimerSpawner Cannon", new V3(1f, 1f, 1f), new Part[] {
+            new Part("pitcher_stand", 206, new V3(0f, 0f, 0f), new Q(-0.707107f, 0f, 0f, 0.707107f), new V3(1f, 1f, 1f), new[] { Kind.VertexColor }),   // AutomaticPitcher/pitcher_stand
+            new Part("pitcher_pivot", 409, new V3(0f, 0.9f, 0f), new Q(-0.707107f, 0f, 0f, 0.707107f), new V3(1f, 1f, 1f), new[] { Kind.VertexColor }),   // pitcher_stand/pitch_height_adjuster/pitcher_pivot
+            new Part("pitcher_cannon", 769, new V3(0f, 1.2036f, -0.22f), new Q(-0.707107f, 0f, 0f, 0.707107f), new V3(1f, 1f, 1f), new[] { Kind.VertexColor }),   // pitcher_pivot/pitcher_cannon
+            new Part("pitcher_coil", 1522, new V3(0f, 1.23f, 0f), new Q(-0.707107f, 0f, 0f, 0.707107f), new V3(1f, 1f, 1f), new[] { Kind.VertexColor }),   // pitcher_cannon/pitcher_coil
+            new Part("PokeButton_Backing", 770, new V3(0.2f, 0.9021f, -0.0038f), new Q(0f, 0.5f, 0.866025f, 0f), new V3(1f, 1f, 1f), new[] { Kind.VertexColor }),   // BasicPokeButton - Cannon/BasicPokeButtonModel/PokeButton_Backing
+            new Part("Pokebutton_Button", 226, new V3(0.2f, 0.9171f, -0.0298f), new Q(0f, 0.5f, 0.866025f, 0f), new V3(1f, 1f, 1f), new[] { Kind.VertexColor }),   // BasicPokeButton - Cannon/BasicPokeButtonModel/Pokebutton_Button_Primed
+            new Part("ball_bottom", 494, new V3(0f, 1.4515f, -0.2154f), new Q(-0.5f, 0.5f, 0.5f, 0.5f), new V3(1f, 1f, 1f), new[] { Kind.VertexColor, Kind.VertexColor }),   // Pomodoro/Kernal/pomodoro/ball_bottom
+            new Part("ball_top", 637, new V3(0f, 1.4515f, -0.2154f), new Q(-0.5f, 0.5f, 0.5f, 0.5f), new V3(1f, 1f, 1f), new[] { Kind.VertexColor, Kind.VertexColor }),   // Pomodoro/Kernal/pomodoro/ball_top
         }),
         new Template("PuzzleTimerGoal", new V3(1f, 1f, 1f), new Part[] {
             new Part("pomodoroholder", 1624, new V3(0f, 0.6f, 0f), new Q(-0.706983f, 0f, 0f, 0.70723f), new V3(1f, 1f, 1f), new[] { Kind.VertexColor }),   // PlacementCastable/pomodoro_holder
@@ -399,10 +440,49 @@ internal static partial class PreviewTable {
         new Template("PuzzleSign", new V3(1f, 1f, 1f), new Part[] {
             new Part("board_fineprint", 24, new V3(0f, 0f, 0f), new Q(-0.707107f, 0f, 0f, 0.707106f), new V3(1f, 1f, 1f), new[] { Kind.VertexColor }),   // board
         }),
+        // Vanilla Items copied from the game's removed secret zone (read from the game's level data; the Corpse is its body in rest pose)
+        new Template("PuzzleVanillaItem Laptop", new V3(1f, 1f, 1f), new Part[] {
+            new Part("laptop", 242, new V3(0f, 0f, 0f), new Q(-0.707107f, 0f, 0f, 0.707107f), new V3(1f, 1f, 1f), new[] { Kind.VertexColor, Kind.Plain }),   // Kernal/laptop
+        }),
+        new Template("PuzzleVanillaItem NightVisionGoggles", new V3(1f, 1f, 1f), new Part[] {
+            new Part("nightvisionGoggles", 1933, new V3(0f, 0f, 0f), new Q(-0.707107f, 0f, 0f, 0.707107f), new V3(1f, 1f, 1f), new[] { Kind.VertexColor, Kind.VertexColor }),   // BinocularsKernal/binoculars
+        }),
+        new Template("PuzzleVanillaItem Barrel", new V3(1f, 1f, 1f), new Part[] {
+            new Part("blue barrel", 1378, new V3(0f, 0f, 0f), new Q(-0.707107f, 0f, 0f, 0.707107f), new V3(1f, 1f, 1f), new[] { Kind.VertexColor }),   // Kernal/barrel
+        }),
+        new Template("PuzzleVanillaItem Corpse", new V3(1f, 1f, 1f), new Part[] {
+            new Part("left_foot_mesh", 660, new V3(-0.0794f, -0.723f, 0.0629f), new Q(0.707107f, 0.707107f, 6e-06f, 6e-06f), new V3(0.5292f, 0.5292f, 0.5292f), new[] { Kind.CorpseLegs }),   // Kernal/dummy/Armature/foot_Target_bone_L/SH_foot_bone_L/left_foot_mesh
+            new Part("right_foot_mesh", 667, new V3(0.0794f, -0.723f, 0.0629f), new Q(-0.707107f, -0.707107f, 3e-06f, 3e-06f), new V3(0.5292f, 0.5292f, 0.5292f), new[] { Kind.CorpseLegs }),   // Kernal/dummy/Armature/foot_Target_bone_R/SH_foot_bone_R/right_foot_mesh
+            new Part("bottom_mesh", 2415, new V3(0f, -0.0511f, 0f), new Q(0f, 0.707107f, 0f, 0.707107f), new V3(0.5292f, 0.5292f, 0.5292f), new[] { Kind.CorpseLegs }),   // Kernal/dummy/Armature/pelvis_bone/bottom_mesh
+            new Part("head_mesh", 1431, new V3(0f, 0.584f, 0f), new Q(0f, 0.707107f, 0f, 0.707107f), new V3(0.5292f, 0.5292f, 0.5292f), new[] { Kind.CorpseHead, Kind.CorpseEye }),   // Kernal/dummy/Armature/pelvis_bone/chest_bone/head_upright_bone/head_bone/head_mesh
+            new Part("nose_mesh", 1396, new V3(0f, 0.584f, 0.2382f), new Q(0f, 0f, 0.707107f, 0.707107f), new V3(0.5292f, 0.5292f, 0.5292f), new[] { Kind.CorpseHead }),   // Kernal/dummy/Armature/pelvis_bone/chest_bone/head_upright_bone/head_bone/head_mesh/nose_mesh
+            new Part("torso_mesh", 2415, new V3(0f, 0.2982f, 0f), new Q(0f, 0.707107f, 0f, 0.707107f), new V3(0.5292f, 0.5292f, 0.5292f), new[] { Kind.CorpseTorso }),   // Kernal/dummy/Armature/pelvis_bone/chest_bone/torso_mesh
+            new Part("left_leg_visualiser", 208, new V3(0f, -0.75f, 0f), new Q(-0.5f, 0.5f, 0.5f, 0.5f), new V3(0.5292f, 0.5292f, 0.5292f), new[] { Kind.CorpseLegs }),   // Kernal/dummy/left_leg_visualiser
+            new Part("right_leg_visualiser", 208, new V3(0f, -0.75f, 0f), new Q(-0.5f, 0.5f, 0.5f, 0.5f), new V3(0.5292f, 0.5292f, 0.5292f), new[] { Kind.CorpseLegs }),   // Kernal/dummy/right_leg_visualiser
+            new Part("left_arm_visualiser", 208, new V3(0f, -0.75f, 0f), new Q(-0.707107f, 0f, 0f, 0.707107f), new V3(0.5292f, 0.5292f, 0.5292f), new[] { Kind.CorpseTorso }),   // Kernal/deadLimbs/left_arm_visualiser
+            new Part("right_arm_visualiser", 208, new V3(0f, -0.75f, 0f), new Q(0f, 0.707107f, 0.707107f, 0f), new V3(0.5292f, 0.5292f, 0.5292f), new[] { Kind.CorpseTorso }),   // Kernal/deadLimbs/right_arm_visualiser
+            new Part("left_hand_mesh", 661, new V3(-0.3501f, 0.0178f, 0f), new Q(-0.499997f, 0.500003f, 0.499998f, 0.500002f), new V3(0.5292f, 0.5292f, 0.5292f), new[] { Kind.CorpseTorso }),   // Kernal/deadLimbs/left_hand_mesh
+            new Part("right_hand_mesh", 672, new V3(0.3502f, 0.0178f, 0f), new Q(-0.707107f, 0f, 0f, 0.707107f), new V3(0.5292f, 0.5292f, 0.5292f), new[] { Kind.CorpseTorso }),   // Kernal/deadLimbs/right_hand_mesh
+        }),
     };
 
     // Every mesh the previews use, with the vertex count of the right copy
     internal static readonly (string name, int vertices)[] Meshes = {
+        ("left_leg_visualiser", 208),
+        ("right_leg_visualiser", 208),
+        ("left_arm_visualiser", 208),
+        ("right_arm_visualiser", 208),
+        ("left_hand_mesh", 661),
+        ("right_hand_mesh", 672),
+        ("laptop", 242),
+        ("nightvisionGoggles", 1933),
+        ("blue barrel", 1378),
+        ("left_foot_mesh", 660),
+        ("right_foot_mesh", 667),
+        ("bottom_mesh", 2415),
+        ("torso_mesh", 2415),
+        ("head_mesh", 1431),
+        ("nose_mesh", 1396),
         ("BackpackHanger", 733),
         ("BasicPushButton", 247),
         ("BasicPushButtonCase", 706),
@@ -430,6 +510,21 @@ internal static partial class PreviewTable {
         ("LiveSignal", 1187),
         ("MasterSequenceSpeaker", 849),
         ("PegBoard_12slot", 1811),
+        ("frame", 312),
+        ("amplifier", 2120),
+        ("chair_tall", 1044),
+        ("headphones_unworn", 1444),
+        ("headphonestand", 988),
+        ("headphonestand_cord", 1113),
+        ("sidetable", 440),
+        ("Mic", 3431),
+        ("MicStand", 472),
+        ("pulley 0.75", 1064),
+        ("pulley 1.0", 1064),
+        ("pulley 1.3", 1112),
+        ("slide", 742),
+        ("staticString", 539),
+        ("stretchyString", 32),
         ("PegBoard_1slot", 636),
         ("PegBoard_2slot", 767),
         ("PegBoard_3slot", 905),
@@ -477,8 +572,14 @@ internal static partial class PreviewTable {
         ("cowbell_small_bell", 1252),
         ("cowbell_small_clapper", 185),
         ("dispenser", 2942),
+        ("pitcher_stand", 206),
+        ("pitcher_pivot", 409),
+        ("pitcher_cannon", 769),
+        ("pitcher_coil", 1522),
         ("door_folding_frame", 472),
         ("door_folding_panel", 68),
+        ("door_folding_frame_soundproof", 496),
+        ("door_folding_panelsoundproof", 360),
         ("egghunt_pegboard", 3825),
         ("flaregun", 2723),
         ("flaregunbarrel", 1063),

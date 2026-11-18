@@ -54,6 +54,8 @@ internal static class PuzzleChecks {
             else if (s2 && s3 && s4) list.Add("This will always be shown. This script is not needed.");
         }
 
+        if (c is PuzzleTerrainHole && c.GetComponents<Collider>().Length == 0)
+            list.Add("No collider, so it cuts nothing. Add a Box (or other) Collider sized to the hole.");
         if (c is PuzzleRadioDeadZone && c.GetComponents<Collider>().Length == 0)
             list.Add("No collider, so the dead zone covers nothing. Add a Box (or other) Collider sized to the area.");
         if (c is PuzzlePresenceSensor && c.GetComponents<Collider>().Length == 0)
@@ -455,8 +457,6 @@ internal static class PuzzleChecks {
         var list = new List<string>();
         if (c == null) return list;
         const string issue = " Submit an issue on GitHub if you want this changed.";
-        if (c is PuzzleIntercom || c is PuzzleIntercomSpeaker)
-            list.Add("This item doesn't function yet. Display only for now.");
         if (c is PuzzleFireworkLauncher)
             list.Add("Known bug: incorrect particles spawn.");
         if (c is PuzzleSoundPeg)
@@ -632,7 +632,7 @@ internal class PuzzleDisplayEditor : PuzzleComponentEditor {
 // The peg board shows Answer From as one dropdown per slot, listing the displays and speakers in the puzzle
 [CustomEditor(typeof(PuzzlePegBoard))]
 internal class PuzzlePegBoardEditor : PuzzleComponentEditor {
-    private static readonly int[] SlotTotals = { 1, 2, 3, 4, 5, 6, 12 };
+    private static readonly int[] SlotTotals = { 1, 2, 3, 4, 5, 6, 12, 12 };
     internal static int SlotsOf(SerializedProperty size) => SlotTotals[Mathf.Clamp(size.enumValueIndex, 0, SlotTotals.Length - 1)];
 
     // True if no slot has an Answer From yet
@@ -838,6 +838,11 @@ internal class PuzzlePresenceSensorEditor : PuzzleComponentEditor {
         if (kind == "Kettle" || kind == "WalkieTalkie" || kind == "Backpack" || kind == "Belt" || kind == "FlareGun" || kind == "FoldingChair") EditorGUILayout.PropertyField(serializedObject.FindProperty("itemColor"));
         if (kind == "FlareGun") EditorGUILayout.PropertyField(serializedObject.FindProperty("flareColor"));
         if (kind == "Buoy" || kind == "BuoyRed") EditorGUILayout.PropertyField(serializedObject.FindProperty("includeBase"));
+        if (kind == "Corpse") {
+            EditorGUILayout.PropertyField(serializedObject.FindProperty("corpseHeadColor"));
+            EditorGUILayout.PropertyField(serializedObject.FindProperty("corpseTorsoColor"));
+            EditorGUILayout.PropertyField(serializedObject.FindProperty("corpseLegsColor"));
+        }
         EditorGUILayout.PropertyField(serializedObject.FindProperty("savesOnReload"));
         serializedObject.ApplyModifiedProperties();
         PuzzleChecks.DrawHelpBoxes((Component)target);
@@ -847,6 +852,8 @@ internal class PuzzlePresenceSensorEditor : PuzzleComponentEditor {
 [CustomEditor(typeof(PuzzleCountValidator))] internal class PuzzleCountValidatorEditor : PuzzleComponentEditor { }
 [CustomEditor(typeof(PuzzleIntercom))] internal class PuzzleIntercomEditor : PuzzleComponentEditor { }
 [CustomEditor(typeof(PuzzleIntercomSpeaker))] internal class PuzzleIntercomSpeakerEditor : PuzzleComponentEditor { }
+[CustomEditor(typeof(PuzzleListeningChair))] internal class PuzzleListeningChairEditor : PuzzleComponentEditor { }
+[CustomEditor(typeof(PuzzleDirectionalMic))] internal class PuzzleDirectionalMicEditor : PuzzleComponentEditor { }
 [CustomEditor(typeof(PuzzleSoundPeg))] internal class PuzzleSoundPegEditor : PuzzleComponentEditor { }
 [CustomEditor(typeof(PuzzleSoundPegAnswer))] internal class PuzzleSoundPegAnswerEditor : PuzzleComponentEditor { }
 [CustomEditor(typeof(PuzzleNoItemsGate))] internal class PuzzleNoItemsGateEditor : PuzzleComponentEditor { }
@@ -857,6 +864,7 @@ internal class PuzzlePresenceSensorEditor : PuzzleComponentEditor {
 [CustomEditor(typeof(PuzzleCirclePegBoard))] internal class PuzzleCirclePegBoardEditor : PuzzleComponentEditor { }
 [CustomEditor(typeof(PuzzleRadioDeadZone))] internal class PuzzleRadioDeadZoneEditor : PuzzleComponentEditor { }
 [CustomEditor(typeof(PuzzleReverbZone))] internal class PuzzleReverbZoneEditor : PuzzleComponentEditor { }
+[CustomEditor(typeof(PuzzleTerrainHole))] internal class PuzzleTerrainHoleEditor : PuzzleComponentEditor { }
 
 }
 #endif

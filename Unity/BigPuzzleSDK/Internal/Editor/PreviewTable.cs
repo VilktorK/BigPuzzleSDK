@@ -2,7 +2,7 @@
 // PreviewTable.Generated.cs). Plain C#, no UnityEngine.
 namespace BigPuzzleSDK.GameAssets {
 
-internal enum Kind { VertexColor, Glass, Screen, Plain, PegTileFace, RedTint, Cannonball, Tinted }
+internal enum Kind { VertexColor, Glass, Screen, Plain, PegTileFace, RedTint, Cannonball, Tinted, CorpseHead, CorpseTorso, CorpseLegs, CorpseEye }
 
 internal struct V3 { public float x, y, z; public V3(float x, float y, float z) { this.x = x; this.y = y; this.z = z; } }
 internal struct Q { public float x, y, z, w; public Q(float x, float y, float z, float w) { this.x = x; this.y = y; this.z = z; this.w = w; } }

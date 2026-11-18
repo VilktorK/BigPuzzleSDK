@@ -29,7 +29,6 @@ namespace BigPuzzleSDK {
             hidden.RemoveAll(t => t == null);
             hidden.Add(transform);
             gameObject.SetActive(false);
-            Plugin.log.LogInfo($"[PuzzleHider] '{name}' is hidden in {players}-player lobbies.");
         }
 
         // True if this object is, or is inside, an object a PuzzleHider switched off

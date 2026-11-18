@@ -19,16 +19,16 @@ public struct PegSlot {
 }
 
 // How many slots the board has (the game's board models)
-internal enum PuzzlePegBoardSize { Slots1, Slots2, Slots3, Slots4, Slots5, Slots6, Slots12 }
+internal enum PuzzlePegBoardSize { Slots1, Slots2, Slots3, Slots4, Slots5, Slots6, Slots12, Slots12Hoister }
 
 // The game's peg board, 1 to 6 slots or 12 (two rows of six). Checks the tiles hung on it against 'answer'.
 [PuzzleInfo("Checks the tiles hung on it against the answer whenever a peg changes.\nPick a Display flap or Sound Peg Answer per slot in Answer From.")]
 [AddComponentMenu("")]   // hidden from Add Component: comes from the prefab
 public class PuzzlePegBoard : MonoBehaviour {
-    [Tooltip("How many slots. 12 = two rows of six (first row left to right, then the second).")]
+    [Tooltip("How many slots. 12 = two rows of six (first row left to right, then the second). Slots 12 Hoister = the secret zone's hoist: a 12 slot board that slides up and down a tower. Its knob (a sibling object, beside the tower) lifts / lowers it.")]
     [SerializeField] private PuzzlePegBoardSize size = PuzzlePegBoardSize.Slots5;
 
-    [Tooltip("The little marker at the first slot's end. Looks only.")]
+    [Tooltip("The little marker at the first slot's end. Looks only. Not used by Slots 12 Hoister.")]
     [SerializeField] private bool startMarker;
 
     [Tooltip("Per slot (the first is slot 1): a Display or Sound Peg Answer whose picture or sound is that slot's answer. It follows them when they change. A slot left on None can never be correct.")]
@@ -56,7 +56,8 @@ public class PuzzlePegBoard : MonoBehaviour {
                 case PuzzlePegBoardSize.Slots3: return 3;
                 case PuzzlePegBoardSize.Slots4: return 4;
                 case PuzzlePegBoardSize.Slots6: return 6;
-                case PuzzlePegBoardSize.Slots12: return 12;
+                case PuzzlePegBoardSize.Slots12:
+                case PuzzlePegBoardSize.Slots12Hoister: return 12;
                 default: return 5;
             }
         }

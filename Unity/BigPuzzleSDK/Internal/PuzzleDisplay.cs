@@ -14,11 +14,14 @@ public enum PuzzleImageSet { A, B, C, D, Scout, Circle, Pontiff, Camo, LargeA, C
 internal enum PuzzleDisplaySize { One, Two, Three, Five }
 
 // The game's split-flap image display.
-[PuzzleInfo("The game's split-flap image display. A Peg Board can use it as its answer (Answer From). It goes blank when the puzzle stops.")]
+[PuzzleInfo("The game's split-flap image display. A Peg Board can use it as its answer (Answer From). When the puzzle starts it takes random pictures and goes blank when it stops, unless Random On Start is unticked.")]
 [AddComponentMenu("")]   // hidden from Add Component: comes from the prefab
 public class PuzzleDisplay : MonoBehaviour {
     [Tooltip("How many flaps the frame has: 1, 2, 3 or 5. Each flap shows its own picture, numbered from the left (flap 1 is the far left). A Peg Board picks which flap each of its slots follows. Ignored when Copy Display is set: a copy always has the size of the display it follows.")]
     [SerializeField] private PuzzleDisplaySize size = PuzzleDisplaySize.One;
+
+    [Tooltip("On (the default): when the puzzle starts, each flap takes a random Peg Tile and the display goes blank when the puzzle stops. Off: the display is left alone, and only SetImage / Clear change it. A display that copies another ignores this.")]
+    [SerializeField] private bool randomOnStart = true;
 
     [Tooltip("Optional. Always shows whatever the other display shows, with the same flip. It doesn't take a tile of its own.")]
     [SerializeField] private PuzzleDisplay copyDisplay;

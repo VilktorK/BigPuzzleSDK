@@ -30,6 +30,15 @@ public class PuzzleLiveSignal : MonoBehaviour {
     private bool on;
     private bool primed;
 
+    // Missing from packs made by older SDK builds, so it stays true for them (the loader only sets fields a pack has)
+    private bool toggleWithPuzzleState = true;
+    internal bool FollowsPuzzle { get { return toggleWithPuzzleState; } }
+    public bool IsOn => on;
+
+    // Host only: a script lights or darkens the lamp (reaches everyone through the lamp's state)
+    public void TurnOn() { if (PuzzleSDK.IsHost) SetOn(true); }
+    public void TurnOff() { if (PuzzleSDK.IsHost) SetOn(false); }
+
     // Called by the loader while the puzzle is still inactive
     internal void SetupSignal(int index) {
         var log = Plugin.log;

@@ -306,7 +306,6 @@ public class PuzzleConfetti : MonoBehaviour {
 
     // Fires the confetti on this PC (the host's call reaches the other players through syncFired)
     internal void FireNow() {
-        Plugin.log.LogInfo($"[PuzzleConfetti] '{name}' fired");
         int played = 0;
         foreach (ParticleSystem ps in particles) {
             if (ps == null) continue;

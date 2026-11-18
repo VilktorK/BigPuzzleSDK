@@ -8,7 +8,7 @@ namespace BigPuzzleSDK.GameAssets {
 
 public class SetupWindow : EditorWindow {
     private string path;
-    private string status = "";
+    private bool importingModels, importingMap;
 
     [MenuItem("Tools/Big Puzzle SDK/Setup", false, 1)]
     public static void Open() {
@@ -25,8 +25,7 @@ public class SetupWindow : EditorWindow {
         EditorGUILayout.Space();
         GUILayout.Label("Import models", EditorStyles.boldLabel);
         EditorGUILayout.LabelField(
-            "Shows the game's real models on SDK components in the editor. They're read from your own copy " +
-            "of Big Walk into this project's Library folder and are never exported with a puzzle.",
+            "Shows the game's models in editor. They're read from your own copy of Big Walk and are not exported with your puzzles.",
             EditorStyles.wordWrappedMiniLabel);
         EditorGUILayout.Space();
 
@@ -44,54 +43,56 @@ public class SetupWindow : EditorWindow {
         }
 
         EditorGUILayout.Space();
-        if (GUILayout.Button("Import", GUILayout.Height(30))) {
-            status = "Importing...";
-            Repaint();
-            EditorApplication.delayCall += () => { DoImport(); Repaint(); };   // so "Importing..." is drawn first
+        using (new EditorGUI.DisabledScope(importingModels)) {
+            if (GUILayout.Button(importingModels ? "Importing..." : "Import Components", GUILayout.Height(30))) {
+                importingModels = true;
+                Repaint();
+                EditorApplication.delayCall += () => {
+                    try {
+                        DoImport();
+                        if (BigWalkGameModels.Ready) BigWalkMapImporter.AutoImportFirstTime();      // the map comes along with the models, the first time only
+                    }
+                    finally { importingModels = false; Repaint(); }
+                };   // delayed so "Importing..." is drawn first
+            }
         }
-
-        EditorGUILayout.Space();
-        string current = BigWalkGameModels.Ready
-            ? $"Imported: {BigWalkGameModels.ModelCount} models, {BigWalkGameModels.SheetCount} image sheets."
-            : "No models imported yet.";
-        EditorGUILayout.LabelField(string.IsNullOrEmpty(status) ? current : status, EditorStyles.boldLabel);
+        using (new EditorGUI.DisabledScope(importingMap)) {
+            if (GUILayout.Button(new GUIContent(importingMap ? "Importing..." : "Import Map", "Builds a reference copy of Big Walk's whole world (terrain and objects) in the scene, to place puzzles against. Not saved with the scene; never exported."), GUILayout.Height(30))) {
+                string mapPath = path;
+                importingMap = true;
+                Repaint();
+                EditorApplication.delayCall += () => {
+                    try { BigWalkMapImporter.Import(mapPath); }
+                    finally { importingMap = false; Repaint(); }
+                };   // delayed so "Importing..." is drawn first
+            }
+        }
 
         EditorGUILayout.Space(14);
         GUILayout.Label("Setup scripts folder", EditorStyles.boldLabel);
-        EditorGUILayout.LabelField(
-            "If your puzzle has its own scripts, they go in one folder that Unity compiles into a plugin " +
-            "your puzzle ships with. This creates that folder (" + ScriptsFolderSetup.FolderPath + ") with everything it needs. " +
-            "It is also done automatically when the SDK is imported.",
-            EditorStyles.wordWrappedMiniLabel);
-        EditorGUILayout.Space();
         bool exists = ScriptsFolderSetup.Exists;
         using (new EditorGUI.DisabledScope(exists)) {
             if (GUILayout.Button(exists ? "Scripts folder is set up" : "Set up scripts folder", GUILayout.Height(30)))
                 ScriptsFolderSetup.Create(true);
         }
-        if (exists) EditorGUILayout.LabelField("Put your puzzle's scripts in " + ScriptsFolderSetup.FolderPath, EditorStyles.wordWrappedMiniLabel);
+        EditorGUILayout.LabelField(
+            "Custom scripts go in " + ScriptsFolderSetup.FolderPath + " with an assembly definition.",
+            EditorStyles.wordWrappedMiniLabel);
     }
 
     private void DoImport() {
-        if (BigWalkGameModels.Import(path)) {
-            status = $"Imported {BigWalkGameModels.ModelCount} models and {BigWalkGameModels.SheetCount} image sheets.";
-            return;
-        }
+        if (BigWalkGameModels.Import(path)) return;
         // Not there (or not readable): ask where it is
         bool found = BigWalkGameModels.Resolve(path) != null;
         string message = found
             ? "Big Walk's models couldn't be read from:\n" + path + "\n\nSee the Console for details. Pick a different data.unity3d?"
             : "Big Walk wasn't found at:\n" + path + "\n\nPick its data.unity3d file (in the 'Big Walk_Data' folder of the game).";
-        if (!EditorUtility.DisplayDialog("Setup", message, "Locate...", "Cancel")) { status = ""; return; }
+        if (!EditorUtility.DisplayDialog("Setup", message, "Locate...", "Cancel")) return;
         string picked = BigWalkGameModels.Browse(path);
-        if (picked == null) { status = ""; return; }
+        if (picked == null) return;
         path = picked;
-        if (BigWalkGameModels.Import(path))
-            status = $"Imported {BigWalkGameModels.ModelCount} models and {BigWalkGameModels.SheetCount} image sheets.";
-        else {
-            status = "";
+        if (!BigWalkGameModels.Import(path))
             EditorUtility.DisplayDialog("Setup", "That isn't Big Walk's data.unity3d, or it couldn't be read. See the Console for details.", "OK");
-        }
     }
 }
 

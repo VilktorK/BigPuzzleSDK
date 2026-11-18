@@ -36,6 +36,31 @@ public class PuzzleSwitch : MonoBehaviour {
     private PuzzleEvent onTurnedOn;
     private PuzzleEvent onTurnedOff;
 
+    // Remember the position when the lobby is restarted (off in packs from older SDK builds: they no longer save)
+    private bool savesOnReload = false;
+    // The position it loads in (true = on). A saved position (Saves On Reload) takes priority. Missing from older packs: off, as before.
+    private bool defaultState = false;
+    internal bool SavesOnReload { get { return savesOnReload; } }
+
+    private bool silentFlip;      // host: a script flipped this one with callFunc off, so skip the next matching event
+    private bool silentWanted;
+
+    // Host only: a script flips the switch (moves for every player). callFunc: also fire onTurnedOn / onTurnedOff.
+    public void TurnOn(bool callFunc = true) { Script(true, callFunc); }
+    public void TurnOff(bool callFunc = true) { Script(false, callFunc); }
+
+    private void Script(bool wantOn, bool callFunc) {
+        if (!PuzzleSDK.IsHost || !initialFired || switchState == null || on == wantOn) return;
+        try {
+            silentFlip = !callFunc;
+            silentWanted = wantOn;
+            switchState.SetState(wantOn ? (offValue == 0 ? 1 : 0) : offValue);
+        } catch (Exception ex) {
+            silentFlip = false;
+            Plugin.log.LogWarning($"[PuzzleSwitch] '{name}' could not be flipped by a script: {ex.GetType().Name}: {ex.Message.Split('\n')[0]}");
+        }
+    }
+
     private readonly List<PeckSwitch> switches = new List<PeckSwitch>();
     private readonly List<TrackedPeckState> states = new List<TrackedPeckState>();
     private List<ushort> ticketIds = new List<ushort>();   // this copy's network ids (see Tickets in Plugin.cs)
@@ -177,7 +202,7 @@ public class PuzzleSwitch : MonoBehaviour {
         return BigPuzzleSDK.PeckValue.TryRead(switchState, out value) && value != offValue;
     }
 
-    // Puts the switch in its starting position: off, unless the save says the host left it on. The copy starts out looking like the vanilla
+    // Puts the switch in its starting position: the saved one (Saves On Reload), else the Default State. The copy starts out looking like the vanilla
     // switch it was copied from, which may be flipped either way in this player's world, so the
     // position is always applied, not just when it differs.
     private void PlaceAtStart() {
@@ -187,7 +212,11 @@ public class PuzzleSwitch : MonoBehaviour {
             return;
         }
         offValue = 0;
-        int startValue = PuzzleSave.SwitchWasOn(this) ? (offValue == 0 ? 1 : 0) : offValue;
+        // The host decides: the saved position if there is one, else the Default State. Everyone else just follows the host's value,
+        // so players who join later see where it is now (the position they join in), not the default.
+        bool startOn = defaultState;
+        if (savesOnReload) { bool? saved = PuzzleSave.SavedSwitch(this); if (saved.HasValue) startOn = saved.Value; }
+        int startValue = startOn ? (offValue == 0 ? 1 : 0) : offValue;
         try {
             if (SyncedValue.IsHost) {
                 bool repeats = switchState.ignoreStateRepeats;
@@ -236,6 +265,8 @@ public class PuzzleSwitch : MonoBehaviour {
             return;
         }
         if (!changed) return;
+        if (silentFlip && on == silentWanted) { silentFlip = false; return; }   // a script flipped it with callFunc off
+        silentFlip = false;
 
         if (on) {
             if (onTurnedOn != null) onTurnedOn.Invoke();

@@ -8,6 +8,7 @@ namespace BigPuzzleSDK {
 // tile twice. Every tile counts the same, so with ten triangles and one circle a display will most likely get a
 // triangle. A picture only repeats when the puzzle really has more than one tile of it. If the pile runs out, the
 // extra displays stay blank and the extra speakers stay silent (and the puzzle can't be solved).
+// A display with Random On Start unticked takes no tile and is never blanked by the puzzle.
 // Only the host deals; everyone else follows what the host's displays and speakers show.
 internal static class PuzzlePile {
     private static void Shuffle<T>(List<T> list) {
@@ -20,7 +21,7 @@ internal static class PuzzlePile {
     private static List<PuzzleDisplay> DisplaysOf(int root) {
         var list = new List<PuzzleDisplay>();
         foreach (PuzzleDisplay d in PuzzleDisplay.all)
-            if (d != null && d.transform.root.GetInstanceID() == root && !d.CopiesAnother) list.Add(d);
+            if (d != null && d.transform.root.GetInstanceID() == root && !d.CopiesAnother && d.RandomOnStart) list.Add(d);
         return list;
     }
 

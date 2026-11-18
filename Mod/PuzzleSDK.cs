@@ -101,7 +101,7 @@ public class PuzzleSDK : MonoBehaviour {
         if (t == null) return false;
         int root = t.root.GetInstanceID();
         foreach (PuzzleStartSwitch s in PuzzleStartSwitch.all)
-            if (s != null && s.transform.root.GetInstanceID() == root) return true;
+            if (s != null && s.TogglesPuzzle && s.transform.root.GetInstanceID() == root) return true;
         return false;
     }
 
@@ -123,20 +123,20 @@ public class PuzzleSDK : MonoBehaviour {
     // Host only. Does nothing if it is not running.
     public void StopPuzzle() { SetRunning(false); }
 
-    private void SetRunning(bool want) {
+    internal void SetRunning(bool want, bool callSwitchEvents = true) {
         if (!IsHost) return;   // the host decides for everyone
         if (running == want) return;
         int myRoot = transform.root.GetInstanceID();
         var mine = new List<PuzzleStartSwitch>();
         foreach (PuzzleStartSwitch s in PuzzleStartSwitch.all.ToArray())
-            if (s != null && s.transform.root.GetInstanceID() == myRoot) mine.Add(s);
+            if (s != null && s.TogglesPuzzle && s.transform.root.GetInstanceID() == myRoot) mine.Add(s);
         if (mine.Count == 0) return;   // no Start Switch: nothing to move or sync, so nothing happens
         foreach (PuzzleStartSwitch s in mine)
             if (!s.CanFlip) return;   // not ready yet (it reads its default position half a second after spawning)
 
         // The switches move in the world first, so what players see matches the state; the other players' own switches
         // then start or stop their PCs. The host does it here, since its own switches were moved by this call.
-        foreach (PuzzleStartSwitch s in mine) s.FlipFromScript(want);
+        foreach (PuzzleStartSwitch s in mine) s.FlipFromScript(want, callSwitchEvents);
         if (want) RunStart(); else RunStop();
     }
 
@@ -154,7 +154,7 @@ public class PuzzleSDK : MonoBehaviour {
     private void SetLiveSignals(bool lit) {
         int myRoot = transform.root.GetInstanceID();
         foreach (PuzzleLiveSignal signal in PuzzleLiveSignal.all.ToArray())
-            if (signal != null && signal.transform.root.GetInstanceID() == myRoot) signal.SetOn(lit);
+            if (signal != null && signal.FollowsPuzzle && signal.transform.root.GetInstanceID() == myRoot) signal.SetOn(lit);
     }
 
     // Stops the puzzle on this PC. Called by the start switch on every PC when it is flipped back.

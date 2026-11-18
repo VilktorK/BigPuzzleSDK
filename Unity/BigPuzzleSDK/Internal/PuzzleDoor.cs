@@ -17,7 +17,7 @@ public class PuzzleDoor : MonoBehaviour {
     [Tooltip("Open when puzzle active: open while the puzzle is on, closed while it's off.\nClose when puzzle active: closed while the puzzle is on, open while it's off.\nControl with functions only: starts closed and only Open() and Close() move it.\nOpen() and Close() still work in every mode.")]
     [SerializeField] private PuzzleDoorMode mode = PuzzleDoorMode.CloseWhenPuzzleActive;
 
-    [Tooltip("Blocks players' voices while closed, like the game's soundproof doors. Voices pass once it opens.")]
+    [Tooltip("Uses the game's soundproof door (a different look) and blocks players' voices while closed. Voices pass once it opens.")]
     [SerializeField] private bool soundproof;
 
     // Read-only for scripts: whether the door is open right now (the same on every PC)

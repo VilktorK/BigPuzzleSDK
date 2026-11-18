@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 277622812726378398}
   - component: {fileID: 6082862638834006404}
   m_Layer: 0
-  m_Name: Intercom
+  m_Name: Intercom Mic
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

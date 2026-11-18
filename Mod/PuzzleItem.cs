@@ -184,7 +184,6 @@ public class PuzzleItem : PuzzleVanillaCopy, ISavedHeld {
         foreach (Collider src in shapes) {
             if (src == null || src.isTrigger) continue;
             if (src.TryCast<BoxCollider>() == null && src.TryCast<SphereCollider>() == null && src.TryCast<CapsuleCollider>() == null) {
-                Plugin.log.LogInfo($"[PuzzleItem] '{name}': it has a {src.GetIl2CppType().Name}, which the game can't hold, so the item uses one box around its model. Use Box, Sphere or Capsule colliders to get a different shape.");
                 return;
             }
         }
@@ -225,7 +224,6 @@ public class PuzzleItem : PuzzleVanillaCopy, ISavedHeld {
             var list = prop.propColliders;
             if (list != null) foreach (Collider c in made) if (!list.Contains(c)) list.Add(c);
         } catch (Exception) { }
-        Plugin.log.LogInfo($"[PuzzleItem] '{name}': using {made.Count} collider(s) from the object instead of a box.");
     }
 
     // Belt (holster) and backpack are groups on the prop; the pose limit stays. The cowbell this is

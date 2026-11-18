@@ -27,7 +27,7 @@ using static PropertyBlockHelper;
 namespace BigPuzzleSDK {
     [BepInPlugin("markviews.BigPuzzleSDK", "Big Puzzle SDK", Version)]
     public class Plugin : BasePlugin {
-        internal const string Version = "0.1.6";
+        internal const string Version = "0.1.7";
 
         internal static ManualLogSource log;
 
@@ -53,6 +53,7 @@ namespace BigPuzzleSDK {
             LobbyData.Install(harmony);
             SdkJoinGate.Install(harmony);
             ItemUse.Install(harmony);          // On Use / On Release of custom items
+            SecretZoneKeeper.Install(harmony);   // keeps the secret zone (switched off) so Vanilla Items can copy from it
 
             // Register every MonoBehaviour in this assembly (BigPuzzleEditor + all puzzle scripts)
             // so the loader can AddComponent them by name.

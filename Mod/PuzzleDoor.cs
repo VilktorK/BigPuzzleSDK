@@ -46,20 +46,14 @@ public class PuzzleDoor : MonoBehaviour {
     internal void SetupDoor(int index) {
         var log = Plugin.log;
 
-        GameObject template = Templates.Find(ExactPath);
-        if (template == null) {
-            // Not at its known path: search every loaded object instead (slow)
-            foreach (UnityEngine.Object obj in Resources.FindObjectsOfTypeAll(Il2CppType.Of<LobbyDoor>())) {
-                LobbyDoor candidate = obj.TryCast<LobbyDoor>();
-                if (candidate == null || candidate.name != LogicName) continue;
-                Transform parent = candidate.transform.parent;
-                if (parent == null) continue;
-                string path = PathOf(parent);
-                if (path.Contains(CopyName)) continue;   // skip our own copies
-                if (template == null) template = parent.gameObject;
-                if (path.EndsWith(PreferredPath)) { template = parent.gameObject; break; }
-            }
-            Templates.FoundBySearch(this, null, ExactPath, template);
+        // Soundproof doors look different, so they copy the game's soundproof door; if that isn't loaded, the normal one is made soundproof instead
+        bool wantSoundproofLook = soundproof;
+        GameObject template = wantSoundproofLook ? Templates.Find(GameRefs.Door.SoundproofExactPath) : Templates.Find(ExactPath);
+        if (template == null) template = FindBySearch(wantSoundproofLook);
+        if (template == null && wantSoundproofLook) {
+            log.LogWarning($"[PuzzleDoor] '{name}': the game's soundproof door isn't loaded, so the normal door look is used (it still blocks voices).");
+            wantSoundproofLook = false;
+            template = Templates.Find(ExactPath) ?? FindBySearch(false);
         }
         if (template == null) {
             log.LogWarning($"[PuzzleDoor] No vanilla door is loaded, so '{name}' has nothing to copy.");
@@ -140,6 +134,27 @@ public class PuzzleDoor : MonoBehaviour {
             count++;
         }
         if (count == 0) Plugin.log.LogWarning($"[PuzzleDoor] '{name}': no door leaf colliders found, so the door isn't soundproof.");
+    }
+
+    // Not at its known path: search every loaded object instead (slow)
+    private GameObject FindBySearch(bool soundproofLook) {
+        string wantedName = soundproofLook ? GameRefs.Door.SoundproofName : null;
+        string preferred = soundproofLook ? GameRefs.Door.SoundproofPreferredPath : PreferredPath;
+        GameObject template = null;
+        foreach (UnityEngine.Object obj in Resources.FindObjectsOfTypeAll(Il2CppType.Of<LobbyDoor>())) {
+            LobbyDoor candidate = obj.TryCast<LobbyDoor>();
+            if (candidate == null || candidate.name != LogicName) continue;
+            Transform parent = candidate.transform.parent;
+            if (parent == null) continue;
+            bool isSoundproofDoor = parent.name == GameRefs.Door.SoundproofName;
+            if (soundproofLook ? !isSoundproofDoor : isSoundproofDoor) continue;
+            string path = PathOf(parent);
+            if (path.Contains(CopyName)) continue;   // skip our own copies
+            if (template == null) template = parent.gameObject;
+            if (path.EndsWith(preferred)) { template = parent.gameObject; break; }
+        }
+        Templates.FoundBySearch(this, null, soundproofLook ? GameRefs.Door.SoundproofExactPath : ExactPath, template);
+        return template;
     }
 
     private static string PathOf(Transform t, Transform stopAt = null) {

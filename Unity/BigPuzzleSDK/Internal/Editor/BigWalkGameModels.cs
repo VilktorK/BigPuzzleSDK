@@ -18,7 +18,7 @@ public static class BigWalkGameModels {
     private const string DefaultPath = @"C:\Program Files (x86)\Steam\steamapps\common\Big Walk\Big Walk_Data\data.unity3d";
     private const string PathPref = "BigPuzzleSDK.GameDataPath";
     private const string AskedKey = "BigPuzzleSDK.AskedForGame";   // per editor session
-    private const string CacheMagic = "BPSDK-GM2";
+    private const string CacheMagic = "BPSDK-GM8";
 
     private static readonly Dictionary<string, Mesh> meshes = new Dictionary<string, Mesh>();
     private static readonly Dictionary<string, Texture2D> textures = new Dictionary<string, Texture2D>();

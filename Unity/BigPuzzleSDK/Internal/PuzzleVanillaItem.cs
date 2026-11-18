@@ -6,7 +6,7 @@ using UnityEngine;
 namespace BigPuzzleSDK {
 
 // Which of the game's items. Must stay identical, in the same order, to the mod's enum.
-public enum PuzzleVanillaItemType { Blindfold, FoldingChair, Torch, FmRadio, WalkieTalkie, Binoculars, XrayGoggles, Clock, Laser, Megaphone, Kettle, CannonBall, PermoSign, SpareSign, GourdHolder, Belt, Backpack, Gps, FoldingMap, Compass, FlareGun, CowbellBig, CowbellMedium, CowbellSmall, Paintbrush, Football, Buoy, BuoyRed }
+public enum PuzzleVanillaItemType { Blindfold, FoldingChair, Torch, FmRadio, WalkieTalkie, Binoculars, XrayGoggles, Clock, Laser, Megaphone, Kettle, CannonBall, PermoSign, SpareSign, GourdHolder, Belt, Backpack, Gps, FoldingMap, Compass, FlareGun, CowbellBig, CowbellMedium, CowbellSmall, Paintbrush, Football, Buoy, BuoyRed, Laptop, NightVisionGoggles, Barrel, Corpse }
 
 // One of the game's own items, copied as it is. Players pick it up and use it like the original.
 [PuzzleInfo("One of the game's own items, copied as it is: players pick it up, carry and use it like the original.\nChoose which item with Item. It has no events or functions of its own.")]
@@ -30,6 +30,15 @@ public class PuzzleVanillaItem : MonoBehaviour {
 
     [Tooltip("Saved with the game, like gourds. If a player is holding it (hand, belt or backpack) when the game saves or the host reloads the puzzles (Ctrl+F2), it comes back at the spawn area, and stays saved as held while it lies there. Once it has been taken away and put down elsewhere it only saves while held. Otherwise it starts where you put it. Its position is never saved.")]
     [SerializeField] private bool savesOnReload = true;
+
+    [Tooltip("Corpse only: the colour of its head. White (#FFFFFF) keeps the game's own colour.")]
+    [SerializeField] private Color corpseHeadColor = Color.white;
+
+    [Tooltip("Corpse only: the colour of its body (torso and arms). White (#FFFFFF) keeps the game's own colour.")]
+    [SerializeField] private Color corpseTorsoColor = Color.white;
+
+    [Tooltip("Corpse only: the colour of its legs. White (#FFFFFF) keeps the game's own colour.")]
+    [SerializeField] private Color corpseLegsColor = Color.white;
 }
 
 }

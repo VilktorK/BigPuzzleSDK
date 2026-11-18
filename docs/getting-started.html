@@ -15,30 +15,33 @@
   </div>
 </header>
 <div class="page has-side">
-<nav class="side" aria-label="On this page"><ul><li class="grp"><a href="#setup">Setup Unity project</a></li><li class="grp"><a href="#creating-first-puzzle">Creating first puzzle</a></li><li class="grp"><a href="#testing">Testing</a></li><li class="grp"><a href="#sharing">Sharing</a></li></ul></nav>
+<nav class="side" aria-label="On this page"><ul><li class="grp"><a href="#setup">Setup Unity project</a></li><li class="grp"><a href="#bigwalk-map">Map Scene</a></li><li class="grp"><a href="#creating-first-puzzle">Creating first puzzle</a></li><li class="grp"><a href="#testing">Testing</a></li><li class="grp"><a href="#sharing">Sharing</a></li></ul></nav>
 <main>
 <h1 id="getting-started">Getting started</h1>
 <p>Things to know:</p>
 <ul>
-<li>Everyone in the lobby needs the mod and the same puzzles installed</li>
-<li>Modded gourds can only go in the modded tower. Modded tower does not accept vanilla gourds.</li>
-<li>Players will see the placeholder tower (gourd holders at red tower) unless they have a modded tower installed. Players can only have one modded tower installed. Currently nothing happens when modded tower is full. (Select puzzleType: Tower in Puzzle SDK to make one) Please someone make a cool one :)</li>
+<li>Everyone in the lobby needs the same puzzles installed</li>
+<li>Modded gourds only fit the modded tower. (At red tower unless they have a modded tower installed)</li>
 </ul>
 
 <h3>Think about while creating:</h3>
 <ul>
-<li>Please make sure there is no where player can get stuck in your puzzle. Doors that can't be unlocked from the inside, a pit with no exit.. Anything that soft locks the game is no fun</li>
-<li>Try not to overlap with other modded puzzles (world position). It would be nice if they were all compatible with each other</li>
-<li>Make sure everything resets OnPuzzleStop. Some components don't automatically reset themselves when the puzzle stops.</li>
-<li>Support 2, 3 and 4 player lobbies. Use the <code>PuzzleHider</code> script to hide objects per lobby size. Otherwise please say what lobby sizes your puzzle is compatible with in your description.</li>
+<li>Make sure players can't get stuck. Doors that can't be unlocked from the inside, a pit with no exit.</li>
+<li>Make sure everything resets OnPuzzleStop. Some components don't automatically reset when the puzzle stops.</li>
+<li>Try to support 2, 3 and 4 player lobbies. Use the <code>PuzzleHider</code> to hide objects per lobby size.</li>
 </ul>
+
+<h3 id="bigwalk-map">Map Scene</h3>
+<p>The SDK generates the Map scene automatically. Do not create your puzzle in or edit the Map scene.</p>
+<p>You can turn on its child objects: <strong>Small Details</strong> or <strong>Death Floor</strong> if you want to see those.</p>
+<figure class="shot" data-path="images/bigwalk-map-hierarchy.png"><img src="images/bigwalk-map-hierarchy.png" alt="The Map scene above your own scene in the Hierarchy" loading="lazy" onerror="this.parentElement.classList.add('empty');this.remove()"><figcaption>Image goes here: <code>docs/images/bigwalk-map-hierarchy.png</code></figcaption></figure>
 
 <h3 id="setup">Setup Unity project</h3>
 <ol>
 <li>Install <a href="https://thunderstore.io/c/big-walk/p/ebkr/r2modman/">r2modman</a> (click the download button and download / extract the zip)</li>
-<li>Create profile in r2modman and install <a href="https://github.com/markviews/BigPuzzleSDK/releases">BigPuzzleSDK</a>, <a href="https://thunderstore.io/c/big-walk/p/Yukikaco/CinematicUnityExplorer/">UnityExplorer</a>, <a href="https://thunderstore.io/c/big-walk/p/jangles/NoClip/">NoClip</a>
+<li>Create profile in r2modman and install <a href="https://github.com/markviews/BigPuzzleSDK/releases">BigPuzzleSDK</a>
 <ul>
-<li>Also Recomended: <a href="https://thunderstore.io/c/big-walk/p/BayTurtleKing/Big_Landing/">BigLanding</a>, <a href="https://thunderstore.io/c/big-walk/p/Yorimor/DayNightSettings/">DayNightSettings</a>, <a href="https://thunderstore.io/c/big-walk/p/n0__name/BigWalk_SkipIntro/">SkipIntro</a></li>
+<li>Also Recomended: <a href="https://thunderstore.io/c/big-walk/p/Yukikaco/CinematicUnityExplorer/">UnityExplorer</a>, <a href="https://thunderstore.io/c/big-walk/p/jangles/NoClip/">NoClip</a>, <a href="https://thunderstore.io/c/big-walk/p/BayTurtleKing/Big_Landing/">BigLanding</a>, <a href="https://thunderstore.io/c/big-walk/p/Yorimor/DayNightSettings/">DayNightSettings</a>, <a href="https://thunderstore.io/c/big-walk/p/n0__name/BigWalk_SkipIntro/">SkipIntro</a></li>
 </ul>
 </li>
 <li>Create a <a href="https://unity.com/releases/editor/whats-new/6000.3.17f1">6000.3.17f1</a> Unity project with URP</li>
@@ -60,7 +63,6 @@
 <li><strong>Add a Peg Board and a Display.</strong> Drag in a <a href="components.html#peg-board">Peg Board</a> and a <a href="components.html#display">Display</a>. Select each one and set <strong>Size</strong> to 3 in the Inspector: the board gets 3 slots and the display gets 3 flaps. There's nothing to link: with one Peg Board and one Display of the same size, the board's Answer From fills itself in (slot 1 follows flap 1, and so on). The Inspector shows a green tick when it does.</li>
 <li><strong>Add at least 3 Peg Tiles.</strong> Drag in three or more <a href="components.html#peg-tile">Peg Tiles</a>. Select each one and change <strong>Image</strong> (and <strong>Image Set</strong> if you want another set) in the Inspector so every tile shows a different picture. When the puzzle starts, each flap on the display is dealt a different tile from these at random, and players have to hang the matching tiles on the board.</li>
 <li><strong>Add a Validator.</strong> Drag in a <a href="components.html#validator">Validator</a>. The Peg Board finds it by itself and keeps it up to date as players hang tiles. When the answer is right and gets checked, the Validator calls <code>Win()</code> for you. With a Gourd Vice that releases the gourd; with a Box, players win by picking the gourd up.</li>
-<li><strong>Edit position of PuzzleSDK transform.</strong> Start the game. Press <code>N</code> to fly to a position you like. Press <code>F7</code>, click <code>PlayerCharacter ...</code> in unity explorer. Copy the position / rotation to the PuzzleSDK transform. After loading your puzzle (testing steps below), find it in unity explorer and manually adjust the numbers until its position is good. Copy the numbers to Unity.</li>
 <li><strong>Import low poly assets.</strong> Find low poly assets for your puzzle and import them into the Unity project, use them! Search Unity asset store, itch.io, anywhere else.</li>
 </ol>
 <p>That's the whole puzzle! See <a href="components.html">Components</a> for more things you can do.</p>

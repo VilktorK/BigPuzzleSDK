@@ -27,7 +27,7 @@ public static class GamePreviews {
         "PuzzleDisplay", "PuzzlePokeButton", "PuzzleProgressBar", "PuzzleSimPressSwitch", "PuzzleLight", "PuzzleTimer", "PuzzleConfetti",
         "PuzzleGlass", "PuzzlePillow", "PuzzleTelescope",
         // Batch scan (low-priority components)
-        "PuzzleVanillaItem", "PuzzleCountInput", "PuzzleCountValidator", "PuzzleIntercom", "PuzzleIntercomSpeaker",
+        "PuzzleVanillaItem", "PuzzleCountInput", "PuzzleCountValidator", "PuzzleIntercom", "PuzzleIntercomSpeaker", "PuzzleListeningChair", "PuzzleDirectionalMic",
         "PuzzleSoundPeg", "PuzzleSoundPegAnswer", "PuzzleNoItemsGate", "PuzzleCirclePeg",
         "PuzzleCirclePegBoard", "PuzzleTimerSpawner", "PuzzleTimerGoal",
         "PuzzleFireworkLauncher", "PuzzleButtonNHold", "PuzzleHook", "PuzzleSign",
@@ -69,6 +69,8 @@ public static class GamePreviews {
             tileMaterials.Clear();
             foreach (Material m in tintMaterials.Values) if (m != null) UnityEngine.Object.DestroyImmediate(m);
             tintMaterials.Clear();
+            foreach (Material m in corpseMaterials.Values) if (m != null) UnityEngine.Object.DestroyImmediate(m);
+            corpseMaterials.Clear();
             pickMeshes.Clear();
         };
         Selection.selectionChanged += RedirectSelection;
@@ -190,9 +192,9 @@ public static class GamePreviews {
             var boardSo = new SerializedObject(c);
             SerializedProperty size = boardSo.FindProperty("size");
             SerializedProperty marker = boardSo.FindProperty("startMarker");
-            string[] sizes = { "1", "2", "3", "4", "5", "6", "12" };
+            string[] sizes = { "1", "2", "3", "4", "5", "6", "12", "Hoister" };
             int sizeIndex = size != null && size.propertyType == SerializedPropertyType.Enum ? size.enumValueIndex : 4;
-            return "PuzzlePegBoard " + sizes[Mathf.Clamp(sizeIndex, 0, sizes.Length - 1)] + (marker != null && marker.boolValue ? " Marker" : "");
+            return "PuzzlePegBoard " + sizes[Mathf.Clamp(sizeIndex, 0, sizes.Length - 1)] + (sizeIndex != 7 && marker != null && marker.boolValue ? " Marker" : "");   // the hoister has no marker
         }
         if (type == "PuzzleNoItemsGate") {   // the blindfold catwalk's gate when Blind Mask is on
             SerializedProperty bm = new SerializedObject(c).FindProperty("blindMask");
@@ -207,6 +209,14 @@ public static class GamePreviews {
                 return (itemName == "BuoyRed" ? "PuzzleBuoyLight Red" : "PuzzleBuoyLight") + (bas != null && !bas.boolValue ? " NoBase" : "");
             }
             return "PuzzleVanillaItem " + itemName;
+        }
+        if (type == "PuzzleTimerSpawner") {   // Style: Obby dispenser or Cannon
+            SerializedProperty st = new SerializedObject(c).FindProperty("style");
+            return st != null && st.propertyType == SerializedPropertyType.Enum && st.enumValueIndex == 1 ? "PuzzleTimerSpawner Cannon" : type;
+        }
+        if (type == "PuzzleDoor") {   // Soundproof: the game's own soundproof door look
+            SerializedProperty sp = new SerializedObject(c).FindProperty("soundproof");
+            return sp != null && sp.propertyType == SerializedPropertyType.Boolean && sp.boolValue ? "PuzzleDoor Soundproof" : type;
         }
         if (type == "PuzzleDisplay") {   // Size: 1, 2, 3 or 5 flaps
             SerializedProperty sz = new SerializedObject(c).FindProperty("size");
@@ -243,6 +253,16 @@ public static class GamePreviews {
             key += "|" + ColorUtility.ToHtmlStringRGB(tint);
             if (label.EndsWith("CannonBall") && BigWalkGameModels.GetTexture("Cannonball_BaseColor") != null) key += "|skin";   // rebuilt once the skin has loaded
         }
+        if (c.GetType().Name == "PuzzleVanillaItem" && label.EndsWith("Corpse")) {   // head, body and legs: the chosen colours (white = the game's own)
+            var so = new SerializedObject(c);
+            for (int i = 0; i < 3; i++) {
+                SerializedProperty cp = so.FindProperty(CorpseFields[i]);
+                Color chosen = cp != null && cp.propertyType == SerializedPropertyType.Color ? cp.colorValue : Color.white;
+                bool own = Mathf.Abs(chosen.r - 1f) < 0.002f && Mathf.Abs(chosen.g - 1f) < 0.002f && Mathf.Abs(chosen.b - 1f) < 0.002f;
+                corpseColors[i] = own ? CorpseOwn[i] : new Color(chosen.r, chosen.g, chosen.b, 1f);
+                key += "|" + ColorUtility.ToHtmlStringRGB(corpseColors[i]);
+            }
+        }
         if (previews.TryGetValue(c, out Preview existing)) {
             if (existing.key == key && existing.root != null) return;
             Remove(c);
@@ -261,6 +281,20 @@ public static class GamePreviews {
         if (p == null || p.propertyType != SerializedPropertyType.Color) return own;
         Color chosen = p.colorValue;
         return Mathf.Abs(chosen.r - 1f) < 0.002f && Mathf.Abs(chosen.g - 1f) < 0.002f && Mathf.Abs(chosen.b - 1f) < 0.002f ? own : new Color(chosen.r, chosen.g, chosen.b, 1f);
+    }
+
+    // The corpse: its head, body (torso and arms) and legs (legs and hips) colours; the game's own are the red, green and blue it is dressed in
+    private static readonly string[] CorpseFields = { "corpseHeadColor", "corpseTorsoColor", "corpseLegsColor" };
+    internal static readonly Color[] CorpseOwn = { new Color(0.9f, 0.13f, 0.13f), new Color(0.2f, 0.78f, 0.2f), new Color(0.12f, 0.43f, 0.86f) };
+    private static readonly Color[] corpseColors = { CorpseOwn[0], CorpseOwn[1], CorpseOwn[2] };
+
+    private static readonly Dictionary<Color, Material> corpseMaterials = new Dictionary<Color, Material>();
+    internal static Material CorpseMaterial(Color color) {
+        MaterialFor(Kind.VertexColor);
+        if (corpseMaterials.TryGetValue(color, out Material known) && known != null) return known;
+        Material m = Make(vertexColor.shader, color, false, false);
+        corpseMaterials[color] = m;
+        return m;
     }
 
     private static readonly Dictionary<Color, Material> tintMaterials = new Dictionary<Color, Material>();
@@ -318,7 +352,8 @@ public static class GamePreviews {
             var mats = new Material[mesh.subMeshCount];
             for (int s = 0; s < mats.Length; s++) {
                 Kind kind = s < part.kinds.Length ? part.kinds[s] : Kind.VertexColor;
-                mats[s] = kind == Kind.PegTileFace ? TileMaterial(tileImage) : kind == Kind.Tinted ? TintMaterial(tint) : MaterialFor(kind);
+                mats[s] = kind == Kind.PegTileFace ? TileMaterial(tileImage) : kind == Kind.Tinted ? TintMaterial(tint)
+                    : kind == Kind.CorpseHead ? CorpseMaterial(corpseColors[0]) : kind == Kind.CorpseTorso ? CorpseMaterial(corpseColors[1]) : kind == Kind.CorpseLegs ? CorpseMaterial(corpseColors[2]) : MaterialFor(kind);
             }
             renderer.sharedMaterials = mats;
             built++;
@@ -746,6 +781,10 @@ public static class GamePreviews {
             case Kind.Plain: return plain;
             case Kind.Screen: return screen;
             case Kind.RedTint: return redTint;
+            case Kind.CorpseEye: return CorpseMaterial(Color.white);
+            case Kind.CorpseHead: return CorpseMaterial(CorpseOwn[0]);
+            case Kind.CorpseTorso: return CorpseMaterial(CorpseOwn[1]);
+            case Kind.CorpseLegs: return CorpseMaterial(CorpseOwn[2]);
             default: return vertexColor;
         }
     }

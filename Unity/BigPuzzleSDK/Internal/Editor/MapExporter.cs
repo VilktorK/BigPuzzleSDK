@@ -441,12 +441,22 @@ public partial class PuzzleExporterWindow : EditorWindow
             copy.name = rootObject.name;
             StripCustomScripts(copy);
             BigPuzzleSDK.GameAssets.GamePreviews.StripFrom(copy);
+            var fromMap = new List<string>();
             foreach (MeshFilter filter in copy.GetComponentsInChildren<MeshFilter>(true))
             {
                 Mesh used = filter.sharedMesh;
-                if (used != null && (used.hideFlags & HideFlags.DontSave) != 0 && used.name.StartsWith("BigWalk "))
-                    throw new System.Exception($"'{filter.name}' uses the game's own model '{used.name}'. Game models can't be exported; use your own mesh.");
+                if (used == null || (used.hideFlags & HideFlags.DontSave) == 0 || !used.name.StartsWith("BigWalk ")) continue;
+                if (used.name.StartsWith(BigPuzzleSDK.BigWalkMapImporter.MeshPrefix))
+                {
+                    if (!fromMap.Contains(filter.name)) fromMap.Add(filter.name);
+                    continue;
+                }
+                throw new System.Exception($"'{filter.name}' uses the game's own model '{used.name}'. Game models can't be exported; use your own mesh.");
             }
+            if (fromMap.Count > 0)
+                throw new System.Exception("These objects were copied from the BigWalk Map, and the game's meshes can't be exported with a puzzle: "
+                    + string.Join(", ", fromMap.GetRange(0, Mathf.Min(fromMap.Count, 8))) + (fromMap.Count > 8 ? " and " + (fromMap.Count - 8) + " more" : "")
+                    + ". Delete them, or replace them with your own meshes.");
 
             // The game only lets players stand on certain layers, and Default isn't one of them. Everything
             // on Default moves to layer 10 ("World") in the exported copy; your scene is left as it is.
@@ -659,7 +669,7 @@ public partial class PuzzleExporterWindow : EditorWindow
             string encodedTarget = EncodeReference(target);
             if (encodedTarget == "")
             {
-                Debug.LogWarning($"[PuzzleExporter] {fieldName} on '{owner.name}' calls '{method}' on an object outside the puzzle; that entry was skipped.", owner);
+                Debug.LogWarning($"[PuzzleExporter] {fieldName} on '{owner.name}' calls '{method}' on '{target.name}', which is {(EditorUtility.IsPersistent(target) ? "an asset in the Project window (drag the copy from the scene, not the asset)" : "outside the puzzle (not under the puzzle's root object)")}; that entry was skipped.", owner);
                 continue;
             }
 

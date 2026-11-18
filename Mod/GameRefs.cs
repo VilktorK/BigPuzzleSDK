@@ -59,6 +59,10 @@ namespace BigPuzzleSDK {
             public const string ExactPath = "LandmarksPlayerCountAny/TellerWindow/Positioner/BasicDoor";
             public const string LogicName = "BasicDoorPeckLogic";
             public const string PreferredPath = "TellerWindow/Positioner/BasicDoor";
+            // The soundproof version (a different look: metal frame and panels)
+            public const string SoundproofExactPath = "LandmarksPlayerCountAny/SingerAndSelecter/Positioner/SelecterBuilding/Door/BasicDoorSoundproof";
+            public const string SoundproofName = "BasicDoorSoundproof";
+            public const string SoundproofPreferredPath = "SelecterBuilding/Door/BasicDoorSoundproof";
             public static readonly string[] LeafColliders = { "leftCollider", "rightCollider" };
         }
 
@@ -188,6 +192,10 @@ namespace BigPuzzleSDK {
             public const string ExactPath = "LandmarksPlayerCountAny/TellerWindow/Positioner/PegBoard5Slot";   // not confirmed yet: the search warning shows the real one
             public const string TemplateName = "PegBoard5Slot";
             public const string PreferredPath = "TellerWindow/Positioner/PegBoard5Slot";
+            // The "Slots 12 Hoister" option: the secret zone's whole hoist (tower, sliding board, knob and wiring)
+            public const string HoisterExactPath = "LandmarksNonChallenge/SecretZone/Positioner/HoistGroupAndLogic";
+            public const string HoisterTemplateName = "HoistGroupAndLogic";
+            public const string HoisterPreferredPath = "SecretZone/Positioner/HoistGroupAndLogic";
         }
 
         // ---- PegTile ----
@@ -382,10 +390,20 @@ namespace BigPuzzleSDK {
                     "LandmarksNonChallenge/SpawnCourtyardandHubPlatform/Positioner/TeachingArea/Positioner/ObjectsTeaching/PickUp/bellshelf/CowBellSmallProp" },
                 ["PuzzleVanillaItem Football"] = new[] {
                     "LandmarksNonChallenge/SpawnCourtyardandHubPlatform/Positioner/TeachingArea/Positioner/FootyProp" },
+                ["PuzzleVanillaItem Laptop"] = new[] {
+                    "LandmarksNonChallenge/SecretZone/Positioner/PropShelf2/LaptopProp" },
+                ["PuzzleVanillaItem NightVisionGoggles"] = new[] {
+                    "LandmarksNonChallenge/SecretZone/Positioner/PropShelf1/NightVisionGogglesProp" },
+                ["PuzzleVanillaItem Barrel"] = new[] {
+                    "LandmarksNonChallenge/SecretZone/Positioner/Barrels/Barrel" },
+                ["PuzzleVanillaItem Corpse"] = new[] {
+                    "LandmarksNonChallenge/SecretZone/Positioner/Corpse" },
                 ["PuzzleCountInput"] = new[] { "LandmarksPlayerCountAny/PerspectiveCounting/Positioner/InputPlatform/countingpivot/CountingMachine" },
                 ["PuzzleCountValidator"] = new[] { "LandmarksPlayerCountAny/PerspectiveCounting/Positioner/InputPlatform/validatorpivot/CountingValidatorDisplay" },
                 ["PuzzleIntercom"] = new[] { "LandmarksPlayerCount4/Contents/RingRoomChallenge/Positioner/RingRoomChamber/PlayerCountToggledContents/FixedRadio(sending)" },
                 ["PuzzleIntercomSpeaker"] = new[] { "LandmarksPlayerCountAny/SingerAndSelecter/Positioner/Intercoms/Intercom(listening) (2)" },
+                ["PuzzleListeningChair"] = new[] { "LandmarksNonChallenge/SecretZone/Positioner/Listening/ListeningChair" },
+                ["PuzzleDirectionalMic"] = new[] { "LandmarksNonChallenge/SecretZone/Positioner/Listening/DirectionalMic" },
                 ["PuzzleSoundPeg"] = new[] { "LandmarksPlayerCountAny/SingerAndSelecter/Positioner/SelecterBuilding/PegTileSetSpeaker/PegTileProp Speaker" },
                 ["PuzzleSoundPegAnswer"] = new[] { "LandmarksPlayerCountAny/SingerAndSelecter/Positioner/SelecterBuilding/MasterSequenceSpeaker5/MasterSequenceSpeaker" },
                 ["PuzzleNoItemsGate"] = new[] { "LandmarksPlayerCountAny/PoetAndPreist/Positioner/PoetBuilding/BasicTurnstile OneWay - Priest" },
@@ -395,6 +413,7 @@ namespace BigPuzzleSDK {
                     "LandmarksPlayerCount4/Contents/Obby/Positioner/ObbyBuilding/5/PomodoroDispenser",
                     "LandmarksPlayerCount3/Contents/Obby 3Player/Positioner/ObbyBuilding/5/PomodoroDispenser",
                     "LandmarksPlayerCount2/Contents/Obby 2Player/Positioner/ObbyBuilding/5/PomodoroDispenser" },
+                ["PuzzleTimerSpawner Cannon"] = new[] { "LandmarksNonChallenge/SecretZone/Positioner/BasicCannon/PomodoroDispenser" },
                 ["PuzzleTimerGoal"] = new[] {
                     "LandmarksPlayerCount4/Contents/Obby/Positioner/ObbyBuilding/5/BasicReceptical",
                     "LandmarksPlayerCount3/Contents/Obby 3Player/Positioner/ObbyBuilding/5/BasicReceptical/PlacementCastable/pomodoro_holder",

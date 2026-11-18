@@ -9,7 +9,7 @@ namespace BigPuzzleSDK {
 // place. Players hang peg tiles on it; the board reports which picture is in each slot and can
 // check the slots against an answer.
 // The board's size. Must stay identical, in the same order, to the Unity SDK's enum.
-internal enum PuzzlePegBoardSize { Slots1, Slots2, Slots3, Slots4, Slots5, Slots6, Slots12 }
+internal enum PuzzlePegBoardSize { Slots1, Slots2, Slots3, Slots4, Slots5, Slots6, Slots12, Slots12Hoister }
 
 // What a peg board slot holds. Must stay identical, in the same order, to the Unity SDK's types.
 public enum PuzzlePegType { Empty, Image, Sound }
@@ -89,21 +89,25 @@ public class PuzzlePegBoard : MonoBehaviour {
     internal void SetupBoard(int index) {
         var log = Plugin.log;
 
-        GameObject template = Templates.Find(ExactPath);
+        bool hoister = size == PuzzlePegBoardSize.Slots12Hoister;
+        string exactPath = hoister ? GameRefs.PegBoard.HoisterExactPath : ExactPath;
+        string templateName = hoister ? GameRefs.PegBoard.HoisterTemplateName : TemplateName;
+        string preferredPath = hoister ? GameRefs.PegBoard.HoisterPreferredPath : PreferredPath;
+        GameObject template = Templates.Find(exactPath);
         if (template == null) {
             // Not at its known path: search every loaded object instead (slow)
             foreach (UnityEngine.Object obj in Resources.FindObjectsOfTypeAll(Il2CppType.Of<Transform>())) {
                 Transform candidate = obj.TryCast<Transform>();
-                if (candidate == null || candidate.name != TemplateName) continue;
+                if (candidate == null || candidate.name != templateName) continue;
                 string path = PathOf(candidate);
                 if (path.Contains(CopyName)) continue;
                 if (template == null) template = candidate.gameObject;
-                if (path.EndsWith(PreferredPath)) { template = candidate.gameObject; break; }
+                if (path.EndsWith(preferredPath)) { template = candidate.gameObject; break; }
             }
-            Templates.FoundBySearch(this, null, ExactPath, template);
+            Templates.FoundBySearch(this, null, exactPath, template);
         }
         if (template == null) {
-            log.LogWarning($"[PuzzlePegBoard] No vanilla '{TemplateName}' is loaded, so '{name}' has nothing to copy.");
+            log.LogWarning($"[PuzzlePegBoard] No vanilla '{templateName}' is loaded, so '{name}' has nothing to copy.");
             return;
         }
 
@@ -118,7 +122,8 @@ public class PuzzlePegBoard : MonoBehaviour {
             Mathf.Approximately(parentScale.x, 0f) ? templateScale.x : templateScale.x / parentScale.x,
             Mathf.Approximately(parentScale.y, 0f) ? templateScale.y : templateScale.y / parentScale.y,
             Mathf.Approximately(parentScale.z, 0f) ? templateScale.z : templateScale.z / parentScale.z);
-        Resize(copy);
+        if (hoister) PlaceHoister(copy, template);
+        else Resize(copy);
 
         foreach (Component c in copy.GetComponentsInChildren(Il2CppType.Of<Renderer>(), true)) {
             Renderer r = c != null ? c.TryCast<Renderer>() : null;
@@ -148,7 +153,7 @@ public class PuzzlePegBoard : MonoBehaviour {
             string slotName = home.transform.parent != null ? home.transform.parent.name : home.name;
             found.Add(new KeyValuePair<string, PropHome>(slotName, home));
         }
-        found.Sort((a, b) => SlotNumber(a.Key).CompareTo(SlotNumber(b.Key)));   // PegSlot2 before PegSlot10
+        found.Sort((a, b) => SlotOrder(a.Key).CompareTo(SlotOrder(b.Key)));   // PegSlot2 before PegSlot10; the hoister's second row ("PegSlot0 (1)") after the first
         ticketIds = Tickets.Allocate(switches.Count + states.Count + found.Count);
         int homeSlot = switches.Count + states.Count;
         foreach (var pair in found) {
@@ -211,6 +216,32 @@ public class PuzzlePegBoard : MonoBehaviour {
         return int.TryParse(digits, out int n) ? n : int.MaxValue;
     }
 
+    // Slot order: the number in the name, plus 6 per "(n)" copy suffix (the hoister board's second row is
+    // PegSlot0 (1) .. PegSlot5 (1)), so the order is the first row left to right and then the second
+    private static int SlotOrder(string slotName) {
+        int row = 0;
+        string baseName = slotName;
+        int open = slotName.LastIndexOf(" (");
+        if (open > 0 && slotName.EndsWith(")")) {
+            int.TryParse(slotName.Substring(open + 2, slotName.Length - open - 3), out row);
+            baseName = slotName.Substring(0, open);
+        }
+        int n = SlotNumber(baseName);
+        return n == int.MaxValue ? n : n + 6 * row;
+    }
+
+    // The hoist template is the whole group; the tower stands where the Hoister object sits in it. Move the
+    // copy so that spot is this board's origin (the knob, a sibling, then ends up beside the tower).
+    private static void PlaceHoister(GameObject copy, GameObject template) {
+        try {
+            Transform tower = template.transform.Find("Hoister");
+            if (tower == null) { Plugin.log.LogWarning("[PuzzlePegBoard] The hoist has no 'Hoister' object; it stays where the game put it."); return; }
+            Quaternion inverse = Quaternion.Inverse(tower.localRotation);
+            copy.transform.localRotation = inverse;
+            copy.transform.localPosition = -(inverse * Vector3.Scale(tower.localPosition, copy.transform.localScale));
+        } catch (Exception ex) { Plugin.log.LogWarning($"[PuzzlePegBoard] could not place the hoist: {ex.GetType().Name}: {ex.Message.Split('\n')[0]}"); }
+    }
+
     // ---- Size ----
     // The game's board has a model for 1-6 slots and for 12 (two rows of six), but holders for five
     // slots: PegSlots/PegSlot0..4, 0.45 apart (each slot further along -x). The right model is shown
@@ -224,7 +255,8 @@ public class PuzzlePegBoard : MonoBehaviour {
             case PuzzlePegBoardSize.Slots3: return 3;
             case PuzzlePegBoardSize.Slots4: return 4;
             case PuzzlePegBoardSize.Slots6: return 6;
-            case PuzzlePegBoardSize.Slots12: return 12;
+            case PuzzlePegBoardSize.Slots12:
+            case PuzzlePegBoardSize.Slots12Hoister: return 12;
             default: return 5;
         }
     }

@@ -43,6 +43,11 @@ public class PuzzleDisplay : MonoBehaviour {
     // Optional: shows exactly what this other display shows (same picture, set and flip), on every PC.
     private PuzzleDisplay copyDisplay;
 
+    // Whether the puzzle deals this display random pictures on start and blanks it on stop. Stays true for packs from older SDK builds
+    // (the loader only sets fields a pack has).
+    private bool randomOnStart = true;
+    internal bool RandomOnStart { get { return randomOnStart; } }
+
     // How many flaps (1, 2, 3 or 5)
     internal PuzzleDisplaySize size = PuzzleDisplaySize.One;
 

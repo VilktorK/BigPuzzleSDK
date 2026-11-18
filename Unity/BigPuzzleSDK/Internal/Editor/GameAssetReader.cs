@@ -291,6 +291,7 @@ public sealed class SerializedFile {
     public readonly bool bigEndian;
     public readonly string unityVersion;
     public readonly List<ObjectInfo> objects = new List<ObjectInfo>();
+    public readonly List<string> externals = new List<string>();   // the files this one points into (a PPtr's file id n is externals[n - 1]; 0 is this file)
 
     public SerializedFile(UnityBundle bundle, UnityBundle.Node node) {
         this.bundle = bundle;
@@ -337,6 +338,24 @@ public sealed class SerializedFile {
             int classId = version >= 16 ? (typeIndex >= 0 && typeIndex < classIds.Length ? classIds[typeIndex] : -1) : typeIndex;
             objects.Add(new ObjectInfo { pathId = pathId, byteStart = dataOffset + start, byteSize = size, classId = classId });
         }
+
+        // The table of other files this one refers to (only the world map needs it, so a failure here is ignored)
+        try {
+            if (version >= 11) {
+                int scripts = r.I32();
+                for (int i = 0; i < scripts; i++) {
+                    r.I32();
+                    if (version >= 14) { r.Align(4); r.I64(); } else r.I32();
+                }
+            }
+            int count = r.I32();
+            for (int i = 0; i < count; i++) {
+                if (version >= 6) r.CString();
+                if (version >= 5) r.Skip(16);
+                r.I32();
+                externals.Add(r.CString());
+            }
+        } catch (Exception) { externals.Clear(); }
     }
 
     // Reads one entry of the type table and returns its class id (skips any type tree)

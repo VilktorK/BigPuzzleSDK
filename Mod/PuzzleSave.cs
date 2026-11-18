@@ -42,7 +42,8 @@ public class PuzzleSaveData {
 //   lost  -> the gourd is on its puzzle's pillow (no pillow: the vice releases it as on a win)
 //   tower -> the gourd fills the tower's next plinth; when there are none left, the spawn area
 //
-// Switches save "on" or "off" and start that way (a Switch always starts off with no save). A switch
+// Switches and Start Switches with Saves On Reload ticked save "on" or "off" and start that way (otherwise they start off).
+// A saved-on Start Switch that toggles the puzzle state starts the puzzle again. A switch
 // is found again by its place in the hierarchy under the puzzle root, so moving it loses its position.
 //
 // A Buoy Light also saves its light: "on" or "off" ("held on" / "held off" while it is held).
@@ -250,27 +251,37 @@ internal static class PuzzleSave {
     }
 
     // Where a Switch is under its puzzle root, by name and sibling number: "Room#0/Lights#2/Switch#1"
-    private static string SwitchKey(PuzzleSwitch s) {
-        string path = s.name + "#" + s.transform.GetSiblingIndex();
-        for (Transform p = s.transform.parent; p != null && p != s.transform.root; p = p.parent)
+    private static string SwitchKey(PuzzleSwitch s) { return SwitchKey(s.transform); }
+    private static string StartSwitchKey(PuzzleStartSwitch s) { return "start " + SwitchKey(s.transform); }
+
+    private static string SwitchKey(Transform t) {
+        string path = t.name + "#" + t.GetSiblingIndex();
+        for (Transform p = t.parent; p != null && p != t.root; p = p.parent)
             path = p.name + "#" + p.GetSiblingIndex() + "/" + path;
         return path;
     }
 
-    // True if the save says this switch was left on (host only: the others follow the host's value)
-    internal static bool SwitchWasOn(PuzzleSwitch s) {
-        if (!NetworkServer.active || !applied || entries == null) return false;
+    // What the save says about this switch: true = left on, false = left off, null = nothing saved (or not the host: the others
+    // follow the host's value). A saved position takes priority over the switch's Default State.
+    internal static bool? SavedSwitch(PuzzleSwitch s) { return SavedPosition(s.transform, SwitchKey(s)); }
+
+    // The same for a Start Switch that saves on reload
+    internal static bool? SavedStartSwitch(PuzzleStartSwitch s) { return SavedPosition(s.transform, StartSwitchKey(s)); }
+
+    private static bool? SavedPosition(Transform t, string key) {
+        if (!NetworkServer.active || !applied || entries == null) return null;
         try {
-            int root = s.transform.root.GetInstanceID();
+            int root = t.root.GetInstanceID();
             foreach (PuzzleSDK sdk in LoadedPuzzles()) {
                 if (sdk.transform.root.GetInstanceID() != root) continue;
-                return entries.TryGetValue(sdk.packId, out SavedPuzzle saved) && saved != null && saved.switches != null
-                    && saved.switches.TryGetValue(SwitchKey(s), out string value) && value == "on";
+                if (entries.TryGetValue(sdk.packId, out SavedPuzzle saved) && saved != null && saved.switches != null
+                    && saved.switches.TryGetValue(key, out string value)) return value == "on";
+                return null;
             }
         } catch (Exception ex) {
-            Plugin.log.LogWarning($"[Save] could not read the saved position of switch '{s.name}': {ex.GetType().Name}: {ex.Message}");
+            Plugin.log.LogWarning($"[Save] could not read the saved position of switch '{t.name}': {ex.GetType().Name}: {ex.Message}");
         }
-        return false;
+        return null;
     }
 
     private static string KeyOf(ISavedHeld item) => item.Owner.name + " [" + item.ItemId + "]";
@@ -341,8 +352,15 @@ internal static class PuzzleSave {
             Dictionary<string, string> before = null;
             if (result.TryGetValue(sdk.packId, out SavedPuzzle old) && old != null) before = old.switches;
             foreach (PuzzleSwitch sw in PuzzleSwitch.all.ToArray()) {
-                if (sw == null || sw.transform.root.GetInstanceID() != root) continue;
+                if (sw == null || !sw.SavesOnReload || sw.transform.root.GetInstanceID() != root) continue;
                 string key = SwitchKey(sw), value = sw.IsOn ? "on" : "off";
+                if (!sw.Settled) { if (before == null || !before.TryGetValue(key, out value)) continue; }
+                if (saved.switches == null) saved.switches = new Dictionary<string, string>();
+                saved.switches[key] = value;
+            }
+            foreach (PuzzleStartSwitch sw in PuzzleStartSwitch.all.ToArray()) {
+                if (sw == null || !sw.SavesOnReload || sw.transform.root.GetInstanceID() != root) continue;
+                string key = StartSwitchKey(sw), value = sw.IsOn ? "on" : "off";
                 if (!sw.Settled) { if (before == null || !before.TryGetValue(key, out value)) continue; }
                 if (saved.switches == null) saved.switches = new Dictionary<string, string>();
                 saved.switches[key] = value;

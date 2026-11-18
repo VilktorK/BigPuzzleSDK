@@ -39,6 +39,8 @@ public class PuzzleVanillaCopy : MonoBehaviour {
     internal static readonly List<PuzzleVanillaCopy> all = new List<PuzzleVanillaCopy>();
 
     protected GameObject copy;   // the copy (props inside it live outside it once spawned)
+    internal GameObject CopyObject { get { return copy; } }
+    internal static IReadOnlyDictionary<string, string[]> AllTemplatePaths { get { return TemplatePaths; } }
     private readonly List<PeckSwitch> switches = new List<PeckSwitch>();
     private readonly List<TrackedPeckState> states = new List<TrackedPeckState>();
     private readonly List<PlayerPose> poses = new List<PlayerPose>();
@@ -62,6 +64,7 @@ public class PuzzleVanillaCopy : MonoBehaviour {
     private string TemplateKey {
         get {
             PuzzleNoItemsGate gate = this as PuzzleNoItemsGate;
+            if (this is PuzzleTimerSpawner spawnerTemplate && spawnerTemplate.style == PuzzleTimerSpawnerStyle.Cannon) return "PuzzleTimerSpawner Cannon";
             if (this is PuzzleHook hookTemplate) return "PuzzleHook " + (hookTemplate.UsesPackHanger ? "PackHanger" : "WallHook");
             if (gate != null && gate.blindMask) return "PuzzleNoItemsGate BlindMask";   // made one-way in MakeOneWay
             if (gate != null && !gate.oneWay) return "PuzzleNoItemsGate TwoWay";
@@ -143,8 +146,9 @@ public class PuzzleVanillaCopy : MonoBehaviour {
         // The game has no one-way blind mask gate: make one from the two-way one
         PuzzleNoItemsGate gate = this as PuzzleNoItemsGate;
         if (gate != null && gate.blindMask && gate.oneWay) MakeOneWay(copy);
+        if (gate != null) gate.SetupLock(copy);
         PuzzleTimerSpawner spawner = this as PuzzleTimerSpawner;
-        if (spawner != null) spawner.ApplyTime(copy);
+        if (spawner != null) { spawner.ApplyTime(copy); spawner.SetupCannon(copy); }
         if (this is PuzzleSoundPeg soundPeg) SoundPegAudio.Apply(this, copy, soundPeg.sound, soundPeg.customClip);
         if (this is PuzzleSoundPegAnswer answer) { SoundPegAudio.Apply(this, copy, PuzzleSoundTrack.Sound1, null); answer.SetupSound(copy); }
         if (this is PuzzleCountInput counter) counter.SetupCounter(copy);
@@ -160,6 +164,11 @@ public class PuzzleVanillaCopy : MonoBehaviour {
 
         if (this is PuzzleVanillaItem buoyCopy && buoyCopy.IsBuoy) { buoyCopy.EnsureBuoy(copy); buoyCopy.ResetBuoy(copy); buoyCopy.RemoveBase(copy); }
         if (this is PuzzleVanillaItem vanillaItem) vanillaItem.SetupItem(copy);
+
+        if (this is PuzzleIntercom mic) mic.SetupMic(copy);
+        if (this is PuzzleIntercomSpeaker speaker) speaker.SetupSpeaker(copy);
+        if (this is PuzzleListeningChair chair) chair.SetupChair(copy);
+        if (this is PuzzleDirectionalMic ear) ear.SetupMic(copy);
 
         // Grabbable props: kept asleep, with a fixed network id, and cut off from the original's holder
         int propIndex = 0;
@@ -403,7 +412,10 @@ public class PuzzleVanillaCopy : MonoBehaviour {
         if (this is PuzzleButtonNHold nhold) nhold.Watch();
         if (this is PuzzleItem item) item.Watch();
         if (this is PuzzleHook hookWatch) hookWatch.Watch();
-        if (this is PuzzleVanillaItem vanillaItemWatch) { vanillaItemWatch.Watch(); vanillaItemWatch.ApplyPending(); vanillaItemWatch.ApplyLight(); vanillaItemWatch.WatchFlare(); vanillaItemWatch.WatchTorch(); vanillaItemWatch.WatchColor(); }
+        if (this is PuzzleTimerSpawner cannonWatch) cannonWatch.WatchCannon();
+        if (this is PuzzleListeningChair chairWatch) chairWatch.WatchHeadphones();
+        if (this is PuzzleNoItemsGate gateWatch) { gateWatch.WatchLock(); gateWatch.WatchPoses(); }
+        if (this is PuzzleVanillaItem vanillaItemWatch) { vanillaItemWatch.Watch(); vanillaItemWatch.ApplyPending(); vanillaItemWatch.ApplyLight(); vanillaItemWatch.WatchFlare(); vanillaItemWatch.WatchTorch(); vanillaItemWatch.WatchColor(); vanillaItemWatch.WatchCorpse(); }
         if (this is PuzzleFireworkLauncher launcherWatch) launcherWatch.WatchFired();
         FlareSweep.Tick();
 
@@ -482,7 +494,7 @@ public class PuzzleVanillaCopy : MonoBehaviour {
 
 // ---- The components (each only names its template, in TemplatePaths above) ----
 // Which game item a Vanilla Item is. The order must match the Unity-side enum.
-public enum PuzzleVanillaItemType { Blindfold, FoldingChair, Torch, FmRadio, WalkieTalkie, Binoculars, XrayGoggles, Clock, Laser, Megaphone, Kettle, CannonBall, PermoSign, SpareSign, GourdHolder, Belt, Backpack, Gps, FoldingMap, Compass, FlareGun, CowbellBig, CowbellMedium, CowbellSmall, Paintbrush, Football, Buoy, BuoyRed }
+public enum PuzzleVanillaItemType { Blindfold, FoldingChair, Torch, FmRadio, WalkieTalkie, Binoculars, XrayGoggles, Clock, Laser, Megaphone, Kettle, CannonBall, PermoSign, SpareSign, GourdHolder, Belt, Backpack, Gps, FoldingMap, Compass, FlareGun, CowbellBig, CowbellMedium, CowbellSmall, Paintbrush, Football, Buoy, BuoyRed, Laptop, NightVisionGoggles, Barrel, Corpse }
 // Any of the game's items, copied as it is; the creator picks which. Held items can be saved like
 // Grabbable Items (see PuzzleSave); the Spare Sign also has a default text and saves what players write.
 public class PuzzleVanillaItem : PuzzleVanillaCopy, ISavedHeld {
@@ -492,6 +504,9 @@ public class PuzzleVanillaItem : PuzzleVanillaCopy, ISavedHeld {
     private string defaultText = "";      // Spare Sign: the text until a player writes something
     private Color itemColor = Color.white;   // Kettle, Walkie Talkie, Backpack, Belt, Flare Gun, Folding Chair: white keeps the game's own colour
     private Color flareColor = Color.white;  // Flare Gun: the flare's colour (white = the game's own)
+    private Color corpseHeadColor = Color.white;    // Corpse: white keeps the game's own colour
+    private Color corpseTorsoColor = Color.white;
+    private Color corpseLegsColor = Color.white;
     private bool savesOnReload = true;    // held when the game saves or reloads = back at the spawn area
 
     private Prop prop;
@@ -633,7 +648,6 @@ public class PuzzleVanillaItem : PuzzleVanillaCopy, ISavedHeld {
                 Transform pedestal = p.transform;
                 for (int up = 0; up < 5 && pedestal != null && !pedestal.name.StartsWith("buoypedestal"); up++) pedestal = pedestal.parent;
                 if (pedestal == null || !pedestal.name.StartsWith("buoypedestal")) continue;   // never a holder or anything else
-                Plugin.log.LogInfo($"[PuzzleVanillaItem] '{name}': the buoy at the usual place is lit, so '{Templates.FullPath(pedestal)}' is copied instead");
                 return pedestal.gameObject;
             }
             Plugin.log.LogWarning($"[PuzzleVanillaItem] '{name}': every buoy of this colour is lit, so the copy starts from a lit one and is switched off afterwards");
@@ -747,7 +761,6 @@ public class PuzzleVanillaItem : PuzzleVanillaCopy, ISavedHeld {
             buoy.transform.localScale = Vector3.one;
             Prop prop = buoy.GetComponent<Prop>();
             if (prop != null) prop.startHome = holder;
-            Plugin.log.LogInfo($"[PuzzleVanillaItem] '{name}': its pedestal was empty, so a buoy was copied in from {Templates.FullPath(source.transform)}");
         } catch (Exception ex) {
             Plugin.log.LogWarning($"[PuzzleVanillaItem] '{name}': could not add a buoy to the empty pedestal: {ex.GetType().Name}: {ex.Message.Split('\n')[0]}");
         }
@@ -1022,6 +1035,41 @@ public class PuzzleVanillaItem : PuzzleVanillaCopy, ISavedHeld {
         if (Time.time > tintUntil || Time.time < nextTint) return;
         nextTint = Time.time + 0.25f;
         foreach (Renderer r in tintBodies) if (r != null) PaintBody(r);
+    }
+
+    // ---- The Corpse's colours: its head, body and legs each have their own material instance (made by the game's
+    // CorpseLooks when it wakes or when the corpse is dressed), coloured through the look set's colour property.
+    // The game can dress it again when it spawns, so for the first minute the chosen colours are put back if they changed.
+    private float corpseUntil = -1f, nextCorpse;
+    private static bool IsWhite(Color c) { return Mathf.Abs(c.r - 1f) < 0.002f && Mathf.Abs(c.g - 1f) < 0.002f && Mathf.Abs(c.b - 1f) < 0.002f; }
+
+    internal void WatchCorpse() {
+        if (itemType != PuzzleVanillaItemType.Corpse || copy == null) return;
+        if (IsWhite(corpseHeadColor) && IsWhite(corpseTorsoColor) && IsWhite(corpseLegsColor)) return;
+        if (corpseUntil < 0f) corpseUntil = Time.time + 60f;
+        if (Time.time > corpseUntil || Time.time < nextCorpse) return;
+        nextCorpse = Time.time + 0.25f;
+        try {
+            GameObject root = FirstPropObject() ?? copy;
+            Component c = root.GetComponentInChildren(Il2CppType.Of<CorpseLooks>(), true);
+            CorpseLooks looks = c != null ? c.TryCast<CorpseLooks>() : null;
+            if (looks == null) return;
+            string property = looks.lookSet != null ? looks.lookSet.colorPropertyName : null;
+            if (string.IsNullOrEmpty(property)) return;
+            Paint(looks._headMaterialInstance, property, corpseHeadColor);
+            Paint(looks._torsoMaterialInstance, property, corpseTorsoColor);
+            Paint(looks._legsMaterialInstance, property, corpseLegsColor);
+        } catch (Exception ex) {
+            corpseUntil = 0f;
+            Plugin.log.LogWarning($"[PuzzleVanillaItem] '{name}': could not colour the corpse: {ex.GetType().Name}: {ex.Message.Split('\n')[0]}");
+        }
+    }
+
+    private static void Paint(Material material, string property, Color wanted) {
+        if (material == null || IsWhite(wanted) || !material.HasProperty(property)) return;
+        Color old = material.GetColor(property);
+        if (Mathf.Abs(old.r - wanted.r) > 0.002f || Mathf.Abs(old.g - wanted.g) > 0.002f || Mathf.Abs(old.b - wanted.b) > 0.002f)
+            material.SetColor(property, new Color(wanted.r, wanted.g, wanted.b, old.a));
     }
 
     // The Permo Sign is fixed text: a coordinates helper writes two spots of the vanilla map on it. Cut that
@@ -1355,8 +1403,249 @@ public class PuzzleCountValidator : PuzzleVanillaCopy {
         if (pokeButton != null) pokeButton.SetClickable(false);
     }
 }
-public class PuzzleIntercom : PuzzleVanillaCopy { public PuzzleIntercom(IntPtr ptr) : base(ptr) { } }
-public class PuzzleIntercomSpeaker : PuzzleVanillaCopy { public PuzzleIntercomSpeaker(IntPtr ptr) : base(ptr) { } }
+// The game's wall microphone. Its RadioVoiceAssigner's room name is the channel it talks on: a speaker
+// hears it when one of its own assigners has the same room name. The game only plays the voice of the
+// player who is holding the button (nearby players aren't picked up).
+public class PuzzleIntercom : PuzzleVanillaCopy {
+    public PuzzleIntercom(IntPtr ptr) : base(ptr) { }
+
+    // Set in the Inspector (the name must match the Unity-side field): speakers and listening chairs
+    internal List<PuzzleVanillaCopy> speakers = new List<PuzzleVanillaCopy>();
+
+    private string room;
+    // This microphone's own channel (the same on every PC: made from where it sits in the puzzle)
+    internal string Room { get { return room ?? (room = "BPSDK:" + Templates.FullPath(transform)); } }
+
+    internal bool Sends(PuzzleVanillaCopy target) {
+        if (speakers == null || target == null) return false;
+        foreach (PuzzleVanillaCopy s in speakers) if (s != null && s.Pointer == target.Pointer) return true;
+        return false;
+    }
+
+    // The intercoms of this puzzle that play to a speaker or chair, in a fixed order
+    internal static List<PuzzleIntercom> SendersTo(PuzzleVanillaCopy target) {
+        var senders = new List<PuzzleIntercom>();
+        foreach (Component c in target.transform.root.GetComponentsInChildren(Il2CppType.Of<PuzzleIntercom>(), true)) {
+            PuzzleIntercom mic = c != null ? c.TryCast<PuzzleIntercom>() : null;
+            if (mic != null && mic.Sends(target)) senders.Add(mic);
+        }
+        return senders;
+    }
+
+    // Gives each of a speaker's receivers (in a copy of the game's speaker) the channel of one microphone that
+    // plays to it. The game's receiver listens to one channel, so it is copied for each extra microphone (they
+    // share the speaker's sound and light). With no microphone it listens to a channel nobody talks on, so it
+    // never picks up the game's own intercoms.
+    internal static void Tune(PuzzleVanillaCopy owner, GameObject root, List<PuzzleIntercom> senders) {
+        GameObject receiver = null;
+        foreach (Component c in root.GetComponentsInChildren(Il2CppType.Of<RadioVoiceAssigner>(), true)) {
+            if (c != null) { receiver = c.gameObject; break; }
+        }
+        if (receiver == null) { Plugin.log.LogWarning($"[{owner.GetType().Name}] '{owner.name}': the copy has no receiver."); return; }
+        var rooms = new List<string>();
+        foreach (PuzzleIntercom mic in senders) rooms.Add(mic.Room);
+        if (rooms.Count == 0) rooms.Add("BPSDK:unused:" + Templates.FullPath(owner.transform));
+        for (int i = 0; i < rooms.Count; i++) {
+            GameObject go = receiver;
+            if (i > 0) {
+                go = UnityEngine.Object.Instantiate((UnityEngine.Object)receiver, receiver.transform.parent).Cast<GameObject>();
+                go.name = receiver.name + " (" + i + ")";
+            }
+            RadioVoiceAssigner radio = go.GetComponent<RadioVoiceAssigner>();
+            if (radio != null) radio.roomName = rooms[i];
+        }
+    }
+
+    internal void SetupMic(GameObject copy) {
+        foreach (Component c in copy.GetComponentsInChildren(Il2CppType.Of<RadioVoiceAssigner>(), true)) {
+            RadioVoiceAssigner radio = c != null ? c.TryCast<RadioVoiceAssigner>() : null;
+            if (radio == null) continue;
+            try { radio.roomName = Room; }
+            catch (Exception ex) { Plugin.log.LogWarning($"[PuzzleIntercom] '{name}': could not set the channel: {ex.GetType().Name}: {ex.Message.Split('\n')[0]}"); }
+        }
+    }
+}
+
+// The game's wall speaker (see PuzzleIntercom.Tune for how the microphones reach it).
+public class PuzzleIntercomSpeaker : PuzzleVanillaCopy {
+    public PuzzleIntercomSpeaker(IntPtr ptr) : base(ptr) { }
+
+    internal void SetupSpeaker(GameObject copy) {
+        try { PuzzleIntercom.Tune(this, copy, PuzzleIntercom.SendersTo(this)); }
+        catch (Exception ex) { Plugin.log.LogWarning($"[PuzzleIntercomSpeaker] '{name}': could not set up the channels: {ex.GetType().Name}: {ex.Message.Split('\n')[0]}"); }
+    }
+}
+
+// The game's listening chair: sitting in it switches on its HeadSetSystem state, and the studio microphone's
+// PeckEffectHeadset (watching that state) moves the sitter's ears to the microphone. In the game the
+// microphone points at the vanilla chair's state, so a copy is pointed at the copy's (see Link).
+// Intercoms can also play into the headphones: a hidden copy of the game's speaker sits at the sitter's head
+// (no model, flat sound) and is only audible to the player in the chair.
+public class PuzzleListeningChair : PuzzleVanillaCopy {
+    public PuzzleListeningChair(IntPtr ptr) : base(ptr) { }
+
+    // Set in the Inspector (the name must match the Unity-side field)
+    internal PuzzleDirectionalMic microphone;
+
+    private GameObject receiver;
+    private readonly List<AudioSource> voices = new List<AudioSource>();
+    private PlayerPose pose;
+    private bool heard = true;
+    private float nextWatch;
+
+    internal TrackedPeckState HeadsetState() {
+        GameObject root = CopyObject;
+        if (root == null) return null;
+        foreach (Component c in root.GetComponentsInChildren(Il2CppType.Of<TrackedPeckState>(), true)) {
+            TrackedPeckState st = c != null ? c.TryCast<TrackedPeckState>() : null;
+            if (st != null && st.name == "HeadSetSystem") return st;
+        }
+        return null;
+    }
+
+    internal void SetupChair(GameObject copy) {
+        try {
+            foreach (Component c in copy.GetComponentsInChildren(Il2CppType.Of<PlayerPose>(), true)) {
+                if (c != null) { pose = c.TryCast<PlayerPose>(); break; }
+            }
+            // No microphone: the sitter's ears go far below the world, where nothing is, and the headphones' sound is
+            // played there too, so they hear only the intercoms (and only while the button is held)
+            PuzzleDirectionalMic picked = microphone;
+            bool sky = picked == null;
+            if (sky) MakeSkyListener(copy);
+            else PuzzleDirectionalMic.Link(this, picked);
+            var senders = PuzzleIntercom.SendersTo(this);
+            if (senders.Count == 0) return;
+            if (!PuzzleVanillaCopy.AllTemplatePaths.TryGetValue("PuzzleIntercomSpeaker", out string[] paths)) return;
+            GameObject template = Templates.Find(paths);
+            if (template == null) { Plugin.log.LogWarning($"[PuzzleListeningChair] '{name}': the game's speaker isn't loaded, so the headphones can't play intercoms."); return; }
+            receiver = Templates.Clone(template, copy.transform);
+            receiver.name = "HeadphoneReceiver";
+            receiver.transform.localPosition = sky ? SkyPosition : new Vector3(0f, 1.2f, -0.15f);
+            receiver.transform.localRotation = Quaternion.identity;
+            // No model, light, text or colliders (switched off, not removed: the game's effects still point at them)
+            foreach (Component c in receiver.GetComponentsInChildren(Il2CppType.Of<Transform>(), true)) {
+                if (c == null) continue;
+                string n = c.name;
+                if (n == "speaker-wallmounted" || n == "Colliders" || n == "Point Light" || n == "TextChatOutputRadio") c.gameObject.SetActive(false);
+            }
+            PuzzleIntercom.Tune(this, receiver, senders);
+            foreach (Component c in receiver.GetComponentsInChildren(Il2CppType.Of<AudioSource>(), true)) {
+                AudioSource source = c != null ? c.TryCast<AudioSource>() : null;
+                if (source == null) continue;
+                if (sky) continue;   // up there only the sitter's ears are near it
+                try { source.spatialBlend = 0f; source.mute = true; } catch (Exception) { }
+                voices.Add(source);
+            }
+            heard = false;
+        } catch (Exception ex) { Plugin.log.LogWarning($"[PuzzleListeningChair] '{name}': could not set up: {ex.GetType().Name}: {ex.Message.Split('\n')[0]}"); }
+    }
+
+    // Far below the chair (wind only blows above), where nothing else can be heard
+    private static readonly Vector3 SkyPosition = new Vector3(0f, -3000f, 0f);
+
+    // A hidden copy of the game's microphone far underground, pointed at this chair's state like a picked one
+    private void MakeSkyListener(GameObject copy) {
+        TrackedPeckState state = HeadsetState();
+        if (state == null || !PuzzleVanillaCopy.AllTemplatePaths.TryGetValue("PuzzleDirectionalMic", out string[] paths)) return;
+        GameObject template = Templates.Find(paths);
+        if (template == null) { Plugin.log.LogWarning($"[PuzzleListeningChair] '{name}': the game's microphone isn't loaded, so the chair can't shut out the world."); return; }
+        GameObject sky = Templates.Clone(template, copy.transform);
+        sky.name = "SkyListener";
+        sky.transform.localPosition = SkyPosition;
+        sky.transform.localRotation = Quaternion.identity;
+        foreach (Component c in sky.GetComponentsInChildren(Il2CppType.Of<Transform>(), true))
+            if (c != null && c.name == "microphone-studio") c.gameObject.SetActive(false);
+        Component found = sky.GetComponentInChildren(Il2CppType.Of<PeckEffectHeadset>(), true);
+        PeckEffectHeadset headset = found != null ? found.TryCast<PeckEffectHeadset>() : null;
+        if (headset == null) { Plugin.log.LogWarning($"[PuzzleListeningChair] '{name}': the game's microphone has no headset effect."); return; }
+        PuzzleDirectionalMic.PointAt(headset, state);
+    }
+
+    // The headphones are only heard by the local player while they sit in this chair
+    internal void WatchHeadphones() {
+        if (voices.Count == 0 || Time.time < nextWatch) return;
+        nextWatch = Time.time + 0.1f;
+        bool mine = false;
+        try {
+            PlayerCharacter sitter = pose != null ? pose.occupant : null;
+            PlayerNetworking net = sitter != null ? sitter.playerNetworking : null;
+            mine = net != null && net.isLocalPlayer;
+        } catch (Exception) { }
+        if (mine == heard) return;
+        heard = mine;
+        foreach (AudioSource source in voices) { try { if (source != null) source.mute = !mine; } catch (Exception) { } }
+    }
+}
+
+// The game's studio microphone. Its PeckEffectHeadset moves the listening player's ears here while a chair's
+// state is on, so it is pointed at the state of each Listening Chair that picks this microphone. The game's
+// headset effect serves one chair, so each extra chair gets its own hidden copy of the microphone (same place,
+// no model). With no chair picking it the effect is removed, so the game's own chair never drives a copy.
+public class PuzzleDirectionalMic : PuzzleVanillaCopy {
+    public PuzzleDirectionalMic(IntPtr ptr) : base(ptr) { }
+
+    private readonly List<PuzzleListeningChair> chairs = new List<PuzzleListeningChair>();   // the chairs this microphone serves
+    private readonly List<PeckEffectHeadset> headsets = new List<PeckEffectHeadset>();       // one per chair
+    private readonly HashSet<IntPtr> linked = new HashSet<IntPtr>();
+
+    internal static void PointAt(PeckEffectHeadset headset, TrackedPeckState state) {
+        PeckSystemReference reference = headset.peckSystem;
+        reference.peckSystem = state;
+        headset.peckSystem = reference;
+    }
+
+    // Points the microphone's effect for that chair at the chair's state; run from both sides, whichever is set up last does it
+    internal static void Link(PuzzleListeningChair chair, PuzzleDirectionalMic mic) {
+        if (chair == null || mic == null || chair.CopyObject == null || mic.CopyObject == null) return;
+        try {
+            int slot = -1;
+            for (int i = 0; i < mic.chairs.Count; i++) if (mic.chairs[i].Pointer == chair.Pointer) slot = i;
+            if (slot < 0 || slot >= mic.headsets.Count || mic.linked.Contains(chair.Pointer)) return;
+            TrackedPeckState state = chair.HeadsetState();
+            if (state == null) { Plugin.log.LogWarning($"[PuzzleListeningChair] '{chair.name}': it has no headset state to link."); return; }
+            PointAt(mic.headsets[slot], state);
+            mic.linked.Add(chair.Pointer);
+        } catch (Exception ex) { Plugin.log.LogWarning($"[PuzzleListeningChair] '{chair.name}': could not link its microphone: {ex.GetType().Name}: {ex.Message.Split('\n')[0]}"); }
+    }
+
+    private static PeckEffectHeadset HeadsetIn(GameObject root) {
+        Component c = root.GetComponentInChildren(Il2CppType.Of<PeckEffectHeadset>(), true);
+        return c != null ? c.TryCast<PeckEffectHeadset>() : null;
+    }
+
+    internal void SetupMic(GameObject copy) {
+        try {
+            // The chairs that picked this microphone (any number can)
+            foreach (Component c in transform.root.GetComponentsInChildren(Il2CppType.Of<PuzzleListeningChair>(), true)) {
+                PuzzleListeningChair chair = c != null ? c.TryCast<PuzzleListeningChair>() : null;
+                if (chair != null && chair.microphone != null && chair.microphone.Pointer == Pointer) chairs.Add(chair);
+            }
+            PeckEffectHeadset first = HeadsetIn(copy);
+            if (first == null) return;
+            if (chairs.Count == 0) { UnityEngine.Object.DestroyImmediate(first); return; }   // nobody listens: never point it at the game's own chair
+            headsets.Add(first);
+            if (chairs.Count > 1) {
+                if (!PuzzleVanillaCopy.AllTemplatePaths.TryGetValue("PuzzleDirectionalMic", out string[] paths)) return;
+                GameObject template = Templates.Find(paths);
+                for (int i = 1; i < chairs.Count && template != null; i++) {
+                    GameObject extra = Templates.Clone(template, copy.transform);
+                    extra.name = "ExtraListener" + i;
+                    extra.transform.localPosition = Vector3.zero;
+                    extra.transform.localRotation = Quaternion.identity;
+                    foreach (Component c in extra.GetComponentsInChildren(Il2CppType.Of<Transform>(), true))
+                        if (c != null && c.name == "microphone-studio") c.gameObject.SetActive(false);
+                    PeckEffectHeadset h = HeadsetIn(extra);
+                    if (h == null) break;
+                    headsets.Add(h);
+                }
+                if (headsets.Count < chairs.Count) Plugin.log.LogWarning($"[PuzzleDirectionalMic] '{name}': could not make a listener for every chair.");
+            }
+            foreach (PuzzleListeningChair chair in chairs) Link(chair, this);   // the chairs set up before this one
+        } catch (Exception ex) { Plugin.log.LogWarning($"[PuzzleDirectionalMic] '{name}': could not set up: {ex.GetType().Name}: {ex.Message.Split('\n')[0]}"); }
+    }
+}
+
 // The sound match pegs (a grabbable speaker peg, and the fixed speaker it is matched to). Set in
 // the Inspector: one of the game's nine sound match tracks, or a custom sound (see SoundPegAudio).
 public class PuzzleSoundPeg : PuzzleVanillaCopy {
@@ -1601,11 +1890,173 @@ public class PuzzleNoItemsGate : PuzzleVanillaCopy {
     public PuzzleNoItemsGate(IntPtr ptr) : base(ptr) { }
     internal bool oneWay = true;   // Inspector: only from front to back (the plain gate; red plaques)
     internal bool blindMask;       // Inspector: the blindfold catwalk's gate instead of the plain one (two-way)
+    internal bool defaultLocked;   // Inspector: starts locked (the red slat across the gate)
+
+    // Inspector events: a player starts going through the gate, the moment they click to use it. onEnter = the direction a one-way gate
+    // points (front to back), onExit = the other way (the host decides; runs for everyone like every event)
+    private PuzzleEvent onEnter;
+    private PuzzleEvent onExit;
+
+    // The gate's two turnstile poses (front to back, back to front): a player is in one while they stand in the gate
+    private readonly List<PlayerPose> gatePoses = new List<PlayerPose>();
+    private readonly List<bool> gateOccupied = new List<bool>();
+    private float nextPoseCheck;
+
+    private void FindPoses() {
+        if (copy == null) return;
+        foreach (Component c in copy.GetComponentsInChildren(Il2CppType.Of<PlayerPose>(), true)) {
+            PlayerPose pose = c != null ? c.TryCast<PlayerPose>() : null;
+            if (pose == null) continue;
+            gatePoses.Add(pose);
+            gateOccupied.Add(false);
+        }
+    }
+
+    internal void WatchPoses() {
+        if ((onEnter == null && onExit == null) || !PuzzleSDK.IsHost) return;
+        if (Time.time < nextPoseCheck) return;
+        nextPoseCheck = Time.time + 0.1f;
+        if (gatePoses.Count == 0) FindPoses();
+        for (int i = 0; i < gatePoses.Count; i++) {
+            bool now = false;
+            try { now = gatePoses[i] != null && gatePoses[i].occupant != null; } catch (Exception) { }
+            if (now == gateOccupied[i]) continue;
+            gateOccupied[i] = now;
+            if (!now) continue;   // they are coming out of the pose: only the start of a pass counts
+            if (gatePoses[i].gameObject.name.Contains("FrontToBack")) { if (onEnter != null) onEnter.Invoke(); }
+            else if (onExit != null) onExit.Invoke();
+        }
+    }
+
+    // The turnstile's lock is the game's own "LockSystem": a tracked state (0 = unlocked, the state it
+    // starts in; 1 = locked) that slides the slat across and blocks entry. Like a door, the host sets it
+    // and it reaches everyone else.
+    private TrackedPeckState lockState;
+    private bool wantLocked;
+    private bool lockStarted;
+    private int appliedLock = -1;
+
+    internal void SetupLock(GameObject copy) {
+        foreach (Component c in copy.GetComponentsInChildren(Il2CppType.Of<TrackedPeckState>(), true)) {
+            TrackedPeckState st = c != null ? c.TryCast<TrackedPeckState>() : null;
+            if (st != null && st.gameObject.name == "LockSystem") { lockState = st; return; }
+        }
+        Plugin.log.LogWarning($"[PuzzleNoItemsGate] '{name}': the copy has no lock system, so it can't be locked.");
+    }
+
+    internal void WatchLock() {
+        if (lockState == null) return;
+        if (!lockStarted) { lockStarted = true; wantLocked = defaultLocked; }
+        int want = wantLocked ? 1 : 0;
+        if (want == appliedLock) return;
+        if (appliedLock < 0 && want == 0) { appliedLock = 0; return; }   // starts unlocked: nothing to do
+        appliedLock = want;
+        try {
+            if (PuzzleSDK.IsHost) lockState.SetState(want);   // other players: arrives from the host
+        } catch (Exception ex) {
+            Plugin.log.LogWarning($"[PuzzleNoItemsGate] '{name}' could not set the lock ({ex.GetType().Name}: {ex.Message}).");
+        }
+    }
+
+    // Read-only for scripts: whether the gate is locked right now (the same on every PC)
+    public bool IsLocked {
+        get {
+            if (lockState != null && PeckValue.TryRead(lockState, out int v)) return v == 1;
+            return wantLocked;
+        }
+    }
+
+    // ---- Callable from code or from an Inspector event ----
+    // Host only: the lock reaches everyone from the host
+    public void Lock() { if (!PuzzleSDK.IsHost) return; lockStarted = true; wantLocked = true; }
+    public void Unlock() { if (!PuzzleSDK.IsHost) return; lockStarted = true; wantLocked = false; }
 }
 // The timer ball dispenser. Picking up its ball starts the ball's countdown; when it runs out the
 // ball goes back into the dispenser (the game's own logic: PeckEffectTimer, then PeckEffectPropToHome).
+// Must stay identical, in the same order, to the Unity SDK's enum
+public enum PuzzleTimerSpawnerStyle { Obby, Cannon }
 public class PuzzleTimerSpawner : PuzzleVanillaCopy {
     public PuzzleTimerSpawner(IntPtr ptr) : base(ptr) { }
+
+    // Set in the Inspector (filled in by the loader): which dispenser to copy
+    internal PuzzleTimerSpawnerStyle style = PuzzleTimerSpawnerStyle.Obby;
+
+    // ---- Cannon ----
+    // The game's cannon has a poke button, but nothing in it connects the button to the ball (the button only changes how it looks:
+    // its state is 0 primed, 1 pressed, 2 unprimed). So the mod connects them: the host primes the button while the ball sits loaded in
+    // the cannon, and a press fires the ball out of the barrel. The ball's own timer then runs as usual, and when it runs out the game
+    // puts the ball back in the cannon, which primes the button again.
+    private TrackedPeckState cannonButton;
+    private PropHome cannonHome;
+    private Transform cannonMouth;
+    private float cannonReadyAt;
+    private float firedAt = -1f;      // when the ball was let go; it gets its push a moment later
+    private Prop firedBall;
+
+    private float throwStrength = 5f;           // Inspector (filled in by the loader): metres per second out of the barrel
+    private const float CannonLift = 1.5f;      // a little extra upwards
+
+    internal void SetupCannon(GameObject copy) {
+        if (style != PuzzleTimerSpawnerStyle.Cannon) return;
+        foreach (Component c in copy.GetComponentsInChildren(Il2CppType.Of<TrackedPeckState>(), true)) {
+            TrackedPeckState st = c != null ? c.TryCast<TrackedPeckState>() : null;
+            if (st != null && st.gameObject.name == "PokeButtonPeckLogic") { cannonButton = st; break; }
+        }
+        foreach (Component c in copy.GetComponentsInChildren(Il2CppType.Of<PropHome>(), true)) {
+            PropHome home = c != null ? c.TryCast<PropHome>() : null;
+            if (home != null && home.gameObject.name == "PomodoroDispenserHomePitcher") { cannonHome = home; break; }
+        }
+        foreach (Component c in copy.GetComponentsInChildren(Il2CppType.Of<Transform>(), true)) {
+            Transform t = c != null ? c.TryCast<Transform>() : null;
+            if (t != null && t.name == "Particles-Lines") { cannonMouth = t; break; }
+        }
+        cannonReadyAt = Time.time + 3f;   // the ball has to be spawned into the cannon first
+        if (cannonButton == null || cannonHome == null)
+            Plugin.log.LogWarning($"[PuzzleTimerSpawner] '{name}': the cannon's {(cannonButton == null ? "button" : "ball holder")} wasn't found, so the button can't be connected.");
+    }
+
+    internal void WatchCannon() {
+        if (style != PuzzleTimerSpawnerStyle.Cannon || cannonButton == null || cannonHome == null || !PuzzleSDK.IsHost) return;
+        if (Time.time < cannonReadyAt) return;
+        try {
+            // A fired ball gets its push once the game has let go of it
+            if (firedAt > 0f && Time.time >= firedAt) {
+                firedAt = -1f;
+                Prop ball = firedBall; firedBall = null;
+                if (ball != null) Push(ball);
+            }
+
+            Prop loaded = cannonHome.pinnedProp;
+            if (!PeckValue.TryRead(cannonButton, out int state)) return;
+            if (state == 1 && loaded != null && firedAt < 0f) {   // the button was pressed with the ball loaded: fire it
+                loaded.ServerSetUnpinned();
+                firedBall = loaded;
+                firedAt = Time.time + 0.15f;
+                loaded = null;
+            }
+            // Primed (0) while the ball is loaded and ready, unprimed (2) while it is out; a press only counts when primed
+            int want = loaded != null && firedAt < 0f ? 0 : 2;
+            if (state != want) cannonButton.SetState(want);
+        } catch (Exception ex) {
+            Plugin.log.LogWarning($"[PuzzleTimerSpawner] '{name}': the cannon button failed ({ex.GetType().Name}: {ex.Message}).");
+            cannonReadyAt = Time.time + 5f;   // not every frame
+        }
+    }
+
+    // Puts the ball at the mouth of the barrel and sends it on its way
+    private void Push(Prop ball) {
+        Vector3 from = cannonHome.transform.position;
+        Vector3 mouth = cannonMouth != null ? cannonMouth.position : from + transform.forward * 0.7f;
+        Vector3 direction = (mouth - from).normalized;
+        if (direction.sqrMagnitude < 0.01f) direction = transform.forward;
+        ball.transform.position = mouth;
+        Rigidbody body = ball.rb;
+        if (body != null) {
+            body.position = mouth;
+            body.linearVelocity = direction * Mathf.Max(0f, throwStrength) + Vector3.up * CannonLift;
+            body.angularVelocity = Vector3.zero;
+        }
+    }
 
     private const float GameTime = 10f;   // the Obby's timer ball
 
