@@ -128,6 +128,14 @@ public class AllBoardsCorrect : MonoBehaviour {
 <td>Where they are in the world, and which way their head is turned. An offline player keeps the last values.</td>
 </tr>
 <tr>
+<td><code>leftArm</code>, <code>rightArm</code></td>
+<td>What each arm does, as a <code>PuzzleArm</code>: <code>Down</code>, <code>Out</code> (the point gesture) or <code>Up</code> (the wave gesture). Left and right are the player's own. Up wins when both gestures are on. An offline player reports <code>Down</code>.</td>
+</tr>
+<tr>
+<td><code>isCrouching</code></td>
+<td>Whether the player is crouching. False for an offline player.</td>
+</tr>
+<tr>
 <td><code>seat</code></td>
 <td>The <code>PuzzleSeat</code> from your puzzle they are sitting in, or null.</td>
 </tr>

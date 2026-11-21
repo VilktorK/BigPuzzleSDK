@@ -15,7 +15,8 @@ namespace BigPuzzleSDK.GameAssets {
 
 [InitializeOnLoad]
 public static class BigWalkGameModels {
-    private const string DefaultPath = @"C:\Program Files (x86)\Steam\steamapps\common\Big Walk\Big Walk_Data\data.unity3d";
+    private const string WindowsSteam = @"C:\Program Files (x86)\Steam";
+    private const string DefaultPath = WindowsSteam + @"\steamapps\common\Big Walk\Big Walk_Data\data.unity3d";
     private const string PathPref = "BigPuzzleSDK.GameDataPath";
     private const string AskedKey = "BigPuzzleSDK.AskedForGame";   // per editor session
     private const string CacheMagic = "BPSDK-GM8";
@@ -66,23 +67,25 @@ public static class BigWalkGameModels {
     }
     internal static string DefaultGamePath => AutoDetect() ?? DefaultPath;
 
-    // Looks for the game without asking: Steam's default folder, the other Steam libraries, then the
-    // install path the game itself wrote to its Player.log (this works whatever launched it, including
-    // r2modman / the Thunderstore app, which run the game from the Steam folder). Null if not found.
+    // Looks for the game without asking: each Steam install's own folder and its other libraries (Windows, then
+    // Linux), then the install path the game itself wrote to its Player.log (this works whatever launched it,
+    // including r2modman / the Thunderstore app, which run the game from the Steam folder). Null if not found.
     internal static string AutoDetect() {
-        string found = Resolve(DefaultPath);
-        if (found != null) return found;
-        try {
-            string steam = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(DefaultPath), "..", "..", "..", ".."));
-            string vdf = Path.Combine(steam, "steamapps", "libraryfolders.vdf");
-            if (File.Exists(vdf)) {
+        string home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+        string[] steamRoots = { WindowsSteam, Path.Combine(home, ".local", "share", "Steam"), Path.Combine(home, ".steam", "steam") };
+        foreach (string steam in steamRoots) {
+            string found = Resolve(Path.Combine(steam, "steamapps", "common", "Big Walk"));
+            if (found != null) return found;
+            try {
+                string vdf = Path.Combine(steam, "steamapps", "libraryfolders.vdf");
+                if (!File.Exists(vdf)) continue;
                 foreach (System.Text.RegularExpressions.Match m in System.Text.RegularExpressions.Regex.Matches(File.ReadAllText(vdf), "\"path\"\\s+\"([^\"]+)\"")) {
                     string lib = m.Groups[1].Value.Replace("\\\\", "\\");
                     found = Resolve(Path.Combine(lib, "steamapps", "common", "Big Walk"));
                     if (found != null) return found;
                 }
-            }
-        } catch { }
+            } catch { }
+        }
         try {
             string log = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "AppData", "LocalLow", "House House", "Big Walk", "Player.log");
             if (File.Exists(log)) {
@@ -93,7 +96,7 @@ public static class BigWalkGameModels {
                         const string key = "Loading player data from ";
                         int i = line.IndexOf(key, StringComparison.Ordinal);
                         if (i < 0) continue;
-                        found = Resolve(line.Substring(i + key.Length).Trim().Replace('/', '\\'));
+                        string found = Resolve(line.Substring(i + key.Length).Trim().Replace('/', '\\'));
                         if (found != null) return found;
                         break;
                     }

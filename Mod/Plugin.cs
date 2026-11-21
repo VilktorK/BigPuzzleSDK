@@ -63,6 +63,7 @@ namespace BigPuzzleSDK {
 
             // Read every installed puzzle (and load its DLLs) now, not when a world loads
             PuzzleLibrary.Scan();
+            TestSession.Install();
 
             var mono = new GameObject("BigPuzzleSDK");
             UnityEngine.Object.DontDestroyOnLoad(mono);
@@ -76,6 +77,12 @@ namespace BigPuzzleSDK {
             ClassInjector.RegisterTypeInIl2Cpp(t);
         }
 
+        // Moves the body this PC controls to the target, facing the way the target faces (Ctrl+F1, test sessions)
+        internal static void TeleportLocal(Transform target) {
+            NetworkIdentity player = NetworkClient.localPlayer;
+            if (player == null) return;
+            PlayerCommands.Place(player.GetComponent<PlayerCharacter>(), target.position, Quaternion.Euler(0f, target.eulerAngles.y, 0f));
+        }
     }
 
     public class BigPuzzleEditor : MonoBehaviour {
@@ -207,6 +214,10 @@ namespace BigPuzzleSDK {
             HostNotice.Tick();
             // Over the password screen: what doesn't match the host's lobby
             JoinPopup.Tick();
+            // Host > Puzzle SDK: the creator menu, and the test session it starts
+            CreatorMenu.Tick();
+            TestSession.Tick();
+            RelayProbe.Tick();
 
             // Creator keys (see Plugin.DevFolder): only when a dev puzzle is installed, and only with Ctrl held,
             // so they can't be hit by accident while playing
@@ -236,6 +247,8 @@ namespace BigPuzzleSDK {
             // Ctrl+F1: teleport the local player to a puzzle's debugTeleport
             if (dev && UnityEngine.Input.GetKeyDown(KeyCode.F1)) TeleportToPuzzle();
 
+            // Ctrl+F4: test players. F1 to F4: take control of a body (TestPlayers)
+            TestPlayers.HandleKeys(ctrl);
         }
 
         // Other players: the host's list of puzzles arrived. Build the ones this PC has in the same
@@ -298,18 +311,7 @@ namespace BigPuzzleSDK {
                 return;
             }
             Plugin.log.LogInfo($"[Puzzle] Ctrl+F1: teleporting to '{main.transform.root.name}'");
-            NetworkIdentity player = NetworkClient.localPlayer;
-            if (player == null) return;
-
-            Vector3 target = main.debugTeleport.position;
-            PlayerCharacter character = player.GetComponent<PlayerCharacter>();
-            Rigidbody body = character != null ? character.rb : player.GetComponent<Rigidbody>();
-            player.transform.position = target;
-            if (body != null) {
-                body.position = target;
-                body.linearVelocity = Vector3.zero;
-                body.angularVelocity = Vector3.zero;
-            }
+            Plugin.TeleportLocal(main.debugTeleport);
         }
     }
 
@@ -383,9 +385,11 @@ namespace BigPuzzleSDK {
             RunCalls(times);
         }
 
+        // A call to an object that a PuzzleHider switched off for this lobby size doesn't run: nothing under it was set up
         private void RunCalls(int times) {
             for (int run = 0; run < times; run++) {
                 foreach (Call call in calls) {
+                    if (call.target is Component c && PuzzleHider.IsHidden(c.transform)) continue;
                     try {
                         call.method.Invoke(call.target, call.args);
                     } catch (Exception ex) {
@@ -2286,7 +2290,7 @@ namespace BigPuzzleSDK {
             Plugin.log.LogInfo($"[Puzzle] Read {packs.Count} puzzle pack(s) in {stopwatch.Elapsed.TotalMilliseconds:F0} ms");
             if (!reportedDev && HasDevPuzzles) {
                 reportedDev = true;
-                Plugin.log.LogInfo("[Puzzle] Creator keys on (a puzzle is in the BigPuzzleSDK folder): Ctrl+F1 teleports to it, Ctrl+F2 reloads.");
+                Plugin.log.LogInfo("[Puzzle] Creator tools on (a puzzle is in the BigPuzzleSDK folder): Host > PUZZLE SDK starts a test session. Ctrl+F1 teleports to it, Ctrl+F2 reloads, Ctrl+F4 spawns a test player, F1 to F4 take control of body 1 to 4.");
             }
         }
 
@@ -2355,18 +2359,22 @@ namespace BigPuzzleSDK {
 
         // The Puzzle Type set on a pack's PuzzleSDK (Puzzle when it has none)
         internal static PuzzleType TypeOf(PuzzlePack pack) {
-            if (pack?.data?.scripts == null) return PuzzleType.Puzzle;
+            PuzzleFieldData field = SdkField(pack, "puzzleType");
+            if (field != null && int.TryParse(field.value, NumberStyles.Integer, CultureInfo.InvariantCulture, out int value)
+                && Enum.IsDefined(typeof(PuzzleType), value))
+                return (PuzzleType)value;
+            return PuzzleType.Puzzle;
+        }
+
+        // One field of a pack's PuzzleSDK as it was exported, read without building the puzzle; null if it has none
+        internal static PuzzleFieldData SdkField(PuzzlePack pack, string name) {
+            if (pack?.data?.scripts == null) return null;
             foreach (PuzzleScriptData script in pack.data.scripts) {
                 string type = script.typeName ?? "";
                 if (!(type == "BigPuzzleSDK" || type == "PuzzleSDK" || type.EndsWith(".PuzzleSDK"))) continue;
-                if (script.fields == null) return PuzzleType.Puzzle;
-                foreach (PuzzleFieldData field in script.fields)
-                    if (field.name == "puzzleType" && int.TryParse(field.value, NumberStyles.Integer, CultureInfo.InvariantCulture, out int value)
-                        && Enum.IsDefined(typeof(PuzzleType), value))
-                        return (PuzzleType)value;
-                return PuzzleType.Puzzle;
+                return script.fields?.Find(f => f.name == name);
             }
-            return PuzzleType.Puzzle;
+            return null;
         }
 
         private static PuzzlePack Read(string path, byte[] bytes, string hash) {
@@ -3178,8 +3186,8 @@ namespace BigPuzzleSDK {
 
     public class PuzzlePackData {
         // The newest pack format this mod can build. Raise it (and the exporter's) whenever a
-        // component's fields or functions change. 5 = the pre-release API clean-up.
-        internal const int SupportedFormat = 5;
+        // component's fields or functions change. 5 = the pre-release API clean-up. 6 = PuzzleSDK test spawns.
+        internal const int SupportedFormat = 6;
 
         public int formatVersion { get; set; }
         public string puzzleId { get; set; }   // permanent id given by the exporter (format 4+)

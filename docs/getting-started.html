@@ -70,9 +70,29 @@
 <h3 id="testing">Testing</h3>
 <ol>
   <li>Click Tools &gt; Export Puzzle. Pick your plugins folder. It should be: <code>%appdata%\r2modmanPlus-local\BigWalk\profiles\[profile name]\BepInEx\plugins\</code></li>
-  <li>Start the game and press <code>Control + F1</code> to teleport to your puzzle if you set a teleport Transform in PuzzleSDK</li>
+  <li>Start the game. Click Host Game, then <strong>PUZZLE SDK</strong> under Start a New Game. Pick your puzzle, then the lobby size.</li>
+  <li>Press <code>Control + F1</code> to teleport to your puzzle if you set a teleport Transform in PuzzleSDK</li>
   <li>Press <code>Control + F2</code> to hot reload your puzzle without restarting your game. Changes to your scripts need a game restart</li>
 </ol>
+<p>The PUZZLE SDK menu shows only while a puzzle is in your <code>BigPuzzleSDK</code> test folder. A test session hosts a game of the lobby size you picked, from a save named <code>PuzzleSDK Test</code>. You start at the puzzle's Debug Teleport. Every other player of the lobby is a test player, at the puzzle's Test Spawns. A puzzle needs a Debug Teleport for a test session.</p>
+<h4>Test players</h4>
+<p>Test players let you try a puzzle for several players alone. These keys work only in a game you host, while a puzzle is in your test folder:</p>
+<ul>
+  <li><code>Control + F4</code>: add a test player in front of the body you control. A lobby holds 4 players, so it stops at 4 bodies.</li>
+  <li><code>Control + Shift + F4</code>: remove the last test player.</li>
+  <li><code>F1</code> to <code>F4</code>: take control of body 1 to 4. F1 is your own body, F2 is Test 1, and so on. In a test session, body n + 1 stands at Test Spawn n. These keys need no Control, and they work only while a test player exists. Your view and hearing move with your controls. A body you leave keeps its gestures and its crouch, so you can hold a pose on one body and check it from another. A test body makes no footstep sounds while you control it. After each swap, the log lists the arms and crouch of every body.</li>
+</ul>
+<p>Each new test player makes the game log one <code>NullReferenceException</code> from <code>PlayerNetworking.Start</code>. The test player works without it, so you can ignore it.</p>
+<p>To start a test session without clicks, add <code>--bpsdk-test 3</code> (or 2, or 4) to the game's launch options. It uses the first puzzle in your test folder that has a Debug Teleport.</p>
+<h4>Export from the command line</h4>
+<p>Scripts and build tools can export every puzzle of a scene without the editor window. Unity exits with code 0 when every puzzle was written:</p>
+<pre><code>Unity -batchmode -nographics -quit -projectPath [project] -executeMethod PuzzleExporterWindow.ExportFromCommandLine -exportFolder [plugins folder] -scene Assets/[scene].unity</code></pre>
+<h4>Linux</h4>
+<ul>
+  <li>In Unity Hub, add the <strong>Windows Build Support (Mono)</strong> module to your editor. The exporter builds the puzzle for the Windows game.</li>
+  <li>The r2modman plugins folder is <code>~/.config/r2modmanPlus-local/BigWalk/profiles/[profile name]/BepInEx/plugins/</code>.</li>
+  <li>The SDK finds Big Walk in your Steam libraries (<code>~/.local/share/Steam</code> or <code>~/.steam/steam</code>).</li>
+</ul>
 <h3 id="sharing">Sharing</h3>
 <ol>
 <li>Click Tools &gt; Export Puzzle &gt; Export For Thunderstore</li>

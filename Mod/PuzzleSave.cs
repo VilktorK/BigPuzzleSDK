@@ -401,13 +401,10 @@ internal static class PuzzleSave {
         int root = sdk.transform.root.GetInstanceID();
         foreach (PuzzleGourdVice vice in PuzzleGourdVice.all)
             if (vice != null && vice.transform.root.GetInstanceID() == root) return vice;
-        return sdk.GetComponentInChildren<PuzzleGourdVice>(true);   // before its Start (step 1)
+        return PuzzleHider.FirstShown<PuzzleGourdVice>(sdk);   // before its Start (step 1)
     }
 
-    private static PuzzlePillow PillowOf(PuzzleSDK sdk) {
-        PuzzlePillow pillow = sdk.GetComponentInChildren<PuzzlePillow>(true);
-        return pillow != null && !PuzzleHider.IsHidden(pillow.transform) ? pillow : null;
-    }
+    private static PuzzlePillow PillowOf(PuzzleSDK sdk) { return PuzzleHider.FirstShown<PuzzlePillow>(sdk); }
 
     // Why a tower gourd found no plinth, for the log
     private static string TowerReport(int slots, int used) {

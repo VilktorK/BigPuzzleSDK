@@ -166,7 +166,13 @@ public partial class PuzzleExporterWindow : EditorWindow
                 status = "Saving...";
                 statusClearAt = 0;
                 Repaint();
-                EditorApplication.delayCall += () => { ExportSelected(chosen); Repaint(); };
+                EditorApplication.delayCall += () =>
+                {
+                    string folder = AskExportFolder();
+                    if (folder == null) status = "";
+                    else ExportSelected(chosen, folder);
+                    Repaint();
+                };
             }
         }
         GUI.enabled = wasEnabled;
@@ -334,7 +340,7 @@ public partial class PuzzleExporterWindow : EditorWindow
             List<BigPuzzleSDK.PuzzleSDK> chosen = allScenes ? window.DevSelected() : window.DevSelected().FindAll(p => p.gameObject.scene == scene);
             if (chosen.Count == 0) return;
             autoExporting = true;
-            window.ExportSelected(chosen);
+            window.ExportSelected(chosen, folder);
         }
         finally
         {
@@ -343,19 +349,22 @@ public partial class PuzzleExporterWindow : EditorWindow
         }
     }
 
-    private void ExportSelected(List<BigPuzzleSDK.PuzzleSDK> chosen)
+    // The remembered export folder. The folder dialog opens only the first time, or when the folder no longer exists.
+    // Null if the dialog was cancelled.
+    private static string AskExportFolder()
     {
-        // Export straight into the remembered folder, replacing the old packs without asking.
-        // The folder is only asked for the first time (or if it no longer exists).
         string folder = ExportFolder();
-        if (string.IsNullOrEmpty(folder) || !Directory.Exists(folder))
-        {
-            folder = EditorUtility.OpenFolderPanel("Puzzle export folder", "", "");
-            if (string.IsNullOrEmpty(folder)) { status = ""; return; }
-            folder = DevFolderFor(folder);
-            EditorPrefs.SetString(ExportFolderKey, folder);
-        }
+        if (!string.IsNullOrEmpty(folder) && Directory.Exists(folder)) return folder;
+        folder = EditorUtility.OpenFolderPanel("Puzzle export folder", "", "");
+        if (string.IsNullOrEmpty(folder)) return null;
+        folder = DevFolderFor(folder);
+        EditorPrefs.SetString(ExportFolderKey, folder);
+        return folder;
+    }
 
+    // Exports the puzzles into the folder, replacing the old packs without asking. True if every one was written.
+    private bool ExportSelected(List<BigPuzzleSDK.PuzzleSDK> chosen, string folder)
+    {
         BigPuzzleSDK.PuzzleSDK previous = puzzle;
         var usedNames = new HashSet<string>(System.StringComparer.OrdinalIgnoreCase);
         int done = 0;
@@ -396,6 +405,53 @@ public partial class PuzzleExporterWindow : EditorWindow
             status = $"Exported {done} of {chosen.Count}. See the Console for details.";   // stays until the next export
             statusClearAt = 0;
         }
+        return done == chosen.Count;
+    }
+
+    // Batch mode export, for scripts and build tools:
+    //   Unity -batchmode -nographics -quit -projectPath <project> -executeMethod PuzzleExporterWindow.ExportFromCommandLine
+    //         -exportFolder <BepInEx plugins folder> -scene Assets/<scene>.unity
+    // Exports every puzzle (a PuzzleSDK on a root object) of the scene, like Dev Export does, then quits:
+    // exit code 0 when every puzzle was written, 1 otherwise.
+    public static void ExportFromCommandLine()
+    {
+        string folder = CommandLineValue("-exportFolder");
+        string scenePath = CommandLineValue("-scene");
+        if (folder == null || scenePath == null) ExitWithError("ExportFromCommandLine needs -exportFolder <BepInEx plugins folder> and -scene <Assets/...unity>.");
+        if (!Directory.Exists(folder)) ExitWithError($"The export folder {folder} does not exist.");
+        UnityEngine.SceneManagement.Scene scene = UnityEditor.SceneManagement.EditorSceneManager.OpenScene(scenePath);
+
+        var chosen = new List<BigPuzzleSDK.PuzzleSDK>();
+        foreach (GameObject root in scene.GetRootGameObjects())
+        {
+            BigPuzzleSDK.PuzzleSDK p = root.GetComponent<BigPuzzleSDK.PuzzleSDK>();
+            if (p == null) continue;
+            foreach (BigPuzzleSDK.PuzzleChecks.Issue issue in BigPuzzleSDK.PuzzleChecks.ForPuzzle(p))
+                Debug.LogWarning("[PuzzleExporter] " + root.name + ": " + issue.message, issue.context);
+            chosen.Add(p);
+        }
+        if (chosen.Count == 0) ExitWithError($"{scenePath} has no puzzle (a PuzzleSDK on a root object).");
+
+        PuzzleExporterWindow window = CreateInstance<PuzzleExporterWindow>();
+        window.hideFlags = HideFlags.HideAndDontSave;
+        bool written = window.ExportSelected(chosen, DevFolderFor(folder));
+        DestroyImmediate(window);
+        if (!written) ExitWithError("Not every puzzle was exported. See the errors above.");
+        EditorApplication.Exit(0);
+    }
+
+    // The value after a command line flag, or null when the flag is not there
+    private static string CommandLineValue(string flag)
+    {
+        string[] args = System.Environment.GetCommandLineArgs();
+        int at = System.Array.IndexOf(args, flag);
+        return at >= 0 && at + 1 < args.Length ? args[at + 1] : null;
+    }
+
+    private static void ExitWithError(string message)
+    {
+        Debug.LogError("[PuzzleExporter] " + message);
+        EditorApplication.Exit(1);
     }
 
     // Builds the .puzzlepack of the selected puzzle at 'path' (an old file there is replaced).
@@ -425,7 +481,7 @@ public partial class PuzzleExporterWindow : EditorWindow
             // 1. Record the custom scripts and their serialized fields (read from the original object)
             var pack = new PuzzlePackData
             {
-                formatVersion = 5,   // must match PuzzlePackData.SupportedFormat in the mod (5 = API clean-up)
+                formatVersion = 6,   // must match PuzzlePackData.SupportedFormat in the mod (6 = PuzzleSDK test spawns)
                 puzzleId = PuzzleIds.For(rootObject),
                 rootName = rootObject.name,
                 scripts = new List<PuzzleScriptData>()

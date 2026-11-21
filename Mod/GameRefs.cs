@@ -458,6 +458,19 @@ namespace BigPuzzleSDK {
             public const string CancelButtonName = "CancelButton";   // child of the PasswordMenu object
         }
 
+        // ---- The Host Game screen (CreatorMenu.cs) ----
+        // Paths under MainMenuManager.hostMenuSelect (the HostMenu_Select object). The creator menu adds a copy of the
+        // START A NEW GAME card to its list. Its pages are a copy of the whole screen, shown in its place.
+        internal static class HostMenu {
+            public const string List = "Right";                   // the column of cards: START A NEW GAME, then the saved games
+            public const string NewGameCard = "Right/NewGameCard"; // the card that is copied for every creator menu entry
+            public const string NewGameButton = "NewGameButton";   // inside a card: the button with its label
+            public const string OldNewGameButton = "NewGameButton_old";   // inside a card: an unused button, removed from the copies
+            public const string Title = "TopLeft/Title";           // HOST GAME
+            public const string BottomLeft = "BottomLeft";         // the join code and the back button
+            public const string BackButton = "BottomLeft/LobbyButton_Underline (back button)";
+        }
+
         // ---- Game methods and members the mod hooks or reads by name ----
         // (Harmony patches and reflection. If one is renamed, the log says "could not hook <name>".)
         internal static class Hooks {

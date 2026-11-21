@@ -18,6 +18,9 @@ public class PuzzleSDK : MonoBehaviour {
     [Tooltip("Ctrl+F1 (creator keys on) teleports you here. For testing.")]
     [SerializeField] private Transform debugTeleport;
 
+    [Tooltip("Test sessions (Host > Puzzle SDK) put test player 1 at the first of these, player 2 at the second, and so on. A test player without one stands in a row beside Debug Teleport, where you start.")]
+    [SerializeField] private List<Transform> testSpawns;
+
     [Tooltip("Puzzle: a challenge that rewards a gourd (needs one PuzzleGourdVice or one PuzzleBox to hold the gourd, and one PuzzlePillow). Tower: a gourd tower (needs at least 10 PuzzleGourdPlinths). None: anything else.")]
     [SerializeField] private PuzzleType puzzleType = PuzzleType.Puzzle;
 

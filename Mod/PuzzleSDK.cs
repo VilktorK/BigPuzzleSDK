@@ -35,6 +35,7 @@ public class PuzzleSDK : MonoBehaviour {
     internal Vector3 spawnPuzzleLocation;   // world position the puzzle's root is placed at
     internal Vector3 spawnPuzzleRotation;   // world rotation of the puzzle's root, in degrees (x, y, z)
     internal Transform debugTeleport;    // F1 teleports the local player here (testing only)
+    internal List<Transform> testSpawns = new List<Transform>();   // test sessions: test player n starts at entry n (see TestSession)
 
     // Set in the Inspector: what this puzzle is (not used yet: for the modded gourd tower)
     internal PuzzleType puzzleType = PuzzleType.Puzzle;

@@ -39,6 +39,14 @@ namespace BigPuzzleSDK {
             return false;
         }
 
+        // The first T under 'root' that no PuzzleHider switched off, or null. A puzzle can hold one version of an
+        // object per lobby size, each under its own Hider.
+        internal static T FirstShown<T>(Component root) where T : Component {
+            foreach (T c in root.GetComponentsInChildren<T>(true))
+                if (!IsHidden(c.transform)) return c;
+            return null;
+        }
+
         // 2, 3 or 4: the lobby size the game is using for its own challenges. Unknown counts as 4.
         internal static int LobbySize() {
             int fromGame = 0;

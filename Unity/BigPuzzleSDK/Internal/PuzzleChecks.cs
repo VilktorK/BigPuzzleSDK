@@ -158,22 +158,45 @@ internal static class PuzzleChecks {
         return list;
     }
 
-    // A Puzzle rewards one gourd (one vice or one box, one pillow); a Tower holds gourds (10+ plinths)
+    // A Puzzle rewards one gourd (one vice or one box, one pillow) in each lobby size; a Tower holds gourds (10+ plinths).
+    // The counts leave out what a PuzzleHider switches off in that size, so a puzzle can hold one version per lobby size.
     private static void CheckPuzzleType(PuzzleSDK sdk, List<string> list) {
         SerializedProperty type = new SerializedObject(sdk).FindProperty("puzzleType");
         if (type == null) return;
         if (type.enumValueIndex == (int)PuzzleType.Puzzle) {
-            int vices = sdk.GetComponentsInChildren<PuzzleGourdVice>(true).Length;
-            int pillows = sdk.GetComponentsInChildren<PuzzlePillow>(true).Length;
-            int boxes = sdk.GetComponentsInChildren<PuzzleBox>(true).Length;
-            if (vices == 0 && boxes == 0) list.Add("Puzzle Type is Puzzle, so it needs a PuzzleGourdVice or a PuzzleBox to hold its gourd.");
-            else if (vices > 0 && boxes > 0) list.Add("This puzzle has both a PuzzleGourdVice and a PuzzleBox. A puzzle only has one gourd, so only the vice's gourd is used and the box stays empty. Remove one of them.");
-            else if (vices > 1) list.Add($"This puzzle has {vices} PuzzleGourdVices, but a puzzle only has one gourd. Keep one.");
-            if (pillows != 1) list.Add($"Puzzle Type is Puzzle, so it needs exactly one PuzzlePillow (it has {pillows}).");
+            var sizesOf = new Dictionary<string, List<int>>();   // each problem, and the lobby sizes that have it
+            for (int n = 2; n <= 4; n++) {
+                int vices = ShownIn<PuzzleGourdVice>(sdk, n);
+                int pillows = ShownIn<PuzzlePillow>(sdk, n);
+                int boxes = ShownIn<PuzzleBox>(sdk, n);
+                var problems = new List<string>();
+                if (vices == 0 && boxes == 0) problems.Add("Puzzle Type is Puzzle, so it needs a PuzzleGourdVice or a PuzzleBox to hold its gourd.");
+                else if (vices > 0 && boxes > 0) problems.Add("This puzzle has both a PuzzleGourdVice and a PuzzleBox. A puzzle only has one gourd, so only the vice's gourd is used and the box stays empty. Remove one of them.");
+                else if (vices > 1) problems.Add($"This puzzle has {vices} PuzzleGourdVices, but a puzzle only has one gourd. Keep one.");
+                if (pillows != 1) problems.Add($"Puzzle Type is Puzzle, so it needs exactly one PuzzlePillow (it has {pillows}).");
+                foreach (string problem in problems) {
+                    if (!sizesOf.TryGetValue(problem, out List<int> sizes)) sizesOf[problem] = sizes = new List<int>();
+                    sizes.Add(n);
+                }
+            }
+            foreach (var pair in sizesOf)
+                list.Add(pair.Value.Count == 3 ? pair.Key : $"In {string.Join(" and ", pair.Value)}-player lobbies: {pair.Key}");
         } else if (type.enumValueIndex == (int)PuzzleType.Tower) {
             int plinths = sdk.GetComponentsInChildren<PuzzleGourdPlinth>(true).Length;
             if (plinths < 10) list.Add($"Puzzle Type is Tower, so it needs at least 10 PuzzleGourdPlinths (it has {plinths}).");
         }
+    }
+
+    // How many T of the puzzle a lobby of n players keeps: no PuzzleHider on them or above them hides that size
+    private static int ShownIn<T>(PuzzleSDK sdk, int n) where T : Component {
+        int count = 0;
+        foreach (T c in sdk.GetComponentsInChildren<T>(true)) {
+            bool shown = true;
+            foreach (PuzzleHider h in c.GetComponentsInParent<PuzzleHider>(true))
+                if (!Bool(new SerializedObject(h), "show" + n)) shown = false;
+            if (shown) count++;
+        }
+        return count;
     }
 
     // ---- Event wiring ----

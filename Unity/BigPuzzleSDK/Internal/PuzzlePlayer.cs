@@ -2,6 +2,9 @@ using UnityEngine;
 
 namespace BigPuzzleSDK {
 
+// What one of a player's arms does: hangs down, points out (the point gesture) or is raised (the wave gesture)
+public enum PuzzleArm { Down, Out, Up }
+
 // One player of the lobby, from PuzzleSDK.players. Everything is read-only, except that the host can move a player
 // (Teleport) and make them put something down (DropItem, DropHat). These are stand-ins: the real ones run inside the game.
 // A player who disconnects stays in the list, in the same place, with isOnline false; the values then keep what they
@@ -22,6 +25,12 @@ public sealed class PuzzlePlayer {
 
     public Vector3 position => Vector3.zero;
     public Quaternion headRotation => Quaternion.identity;
+
+    // What the arms do, as the game shows them to everyone ("left" and "right" are the player's own). Raised wins over pointing.
+    public PuzzleArm leftArm => PuzzleArm.Down;
+    public PuzzleArm rightArm => PuzzleArm.Down;
+    // True while the player is crouching
+    public bool isCrouching => false;
 
     // The Seat (from your puzzle) the player is sitting in, or null
     public PuzzleSeat seat => null;

@@ -9,6 +9,9 @@ using UnityEngine;
 
 namespace BigPuzzleSDK {
 
+// What one of a player's arms does: hangs down, points out (the point gesture) or is raised (the wave gesture)
+public enum PuzzleArm { Down, Out, Up }
+
 // One player of the lobby, for puzzle scripts (PuzzleSDK.players). Everything is read-only, except that the host
 // can move a player (Teleport) and make them put something down (DropItem, DropHat).
 // A player who disconnects stays in the list, in the same place, with isOnline false; the values below then
@@ -38,6 +41,18 @@ public sealed class PuzzlePlayer {
     public Color colorHead => cHead;
     public Color colorBody => cBody;
     public Color colorFeet => cFeet;
+
+    // What the arms do, as the game shows them to everyone ("left" and "right" are the player's own). Raised wins over
+    // pointing when both gestures are on. An offline player reports Down.
+    public PuzzleArm leftArm => net == null ? PuzzleArm.Down : ArmOf(net.NetworkleftArmWaving, net.NetworkleftArmPointing);
+    public PuzzleArm rightArm => net == null ? PuzzleArm.Down : ArmOf(net.NetworkrightArmWaving, net.NetworkrightArmPointing);
+
+    // True while the player is crouching (more than half way down)
+    public bool isCrouching => net != null && net.NetworktrueCrouchness > 0.5f;
+
+    private static PuzzleArm ArmOf(bool waving, bool pointing) {
+        return waving ? PuzzleArm.Up : pointing ? PuzzleArm.Out : PuzzleArm.Down;
+    }
 
     public Vector3 position {
         get {
@@ -191,7 +206,7 @@ internal static class PlayerRoster {
     private const float IdWait = 2f;   // how long to wait for a player's id before using their network id instead
     private static float nextTick;
     private static float emptySince = -1f;
-    private static IntPtr lastLocal = IntPtr.Zero;
+    private static IntPtr lastConnection = IntPtr.Zero;   // this PC's connection to the host
 
     private struct Found { public PlayerCharacter pc; public PlayerNetworking pn; public string key; public uint netId; public bool host; }
 
@@ -226,7 +241,6 @@ internal static class PlayerRoster {
         float now = Time.unscaledTime;
         var found = new List<Found>();
         var keys = new HashSet<string>();
-        IntPtr local = IntPtr.Zero;
 
         var characters = PlayerCharacter.allPlayerCharacters;
         if (characters != null) {
@@ -235,7 +249,6 @@ internal static class PlayerRoster {
                 if (pc == null || !pc.gameObject.scene.IsValid()) continue;
                 PlayerNetworking pn = pc.playerNetworking;
                 if (pn == null) continue;
-                if (pn.isLocalPlayer) local = pc.Pointer;
 
                 uint netId = pn.netId;
                 string key = KeyOf(pn, false);
@@ -251,12 +264,15 @@ internal static class PlayerRoster {
             }
         }
 
-        // A new game (this PC's own player is a different one), or nobody left for a while: start the list over
-        if (local != IntPtr.Zero && lastLocal != IntPtr.Zero && local != lastLocal) Clear();
-        if (local != IntPtr.Zero) lastLocal = local;
+        // A new game (this PC connected again; taking over another body of the same game keeps the connection),
+        // or nobody left for a while: start the list over
+        NetworkConnection connection = NetworkClient.connection;
+        IntPtr current = connection != null ? connection.Pointer : IntPtr.Zero;
+        if (current != IntPtr.Zero && lastConnection != IntPtr.Zero && current != lastConnection) Clear();
+        if (current != IntPtr.Zero) lastConnection = current;
         if (found.Count == 0) {
             if (emptySince < 0f) emptySince = now;
-            else if (now - emptySince > 3f && list.Count > 0) { Clear(); lastLocal = IntPtr.Zero; }
+            else if (now - emptySince > 3f && list.Count > 0) Clear();
         } else {
             emptySince = -1f;
         }
@@ -499,16 +515,17 @@ internal static class PlayerCommands {
         float z = float.Parse(parts[3], CultureInfo.InvariantCulture);
         bool turn = parts[4] == "1";
         float yaw = float.Parse(parts[5], CultureInfo.InvariantCulture);
-        var target = new Vector3(x, y, z);
-        Quaternion facing = Quaternion.Euler(0f, yaw, 0f);
+        Place(pc, new Vector3(x, y, z), turn ? Quaternion.Euler(0f, yaw, 0f) : (Quaternion?)null);
+    }
 
-        // The same steps as the creator key (Ctrl+F1) takes
+    // On the PC that controls the body: moves it and stops it, and turns it when a facing is given
+    internal static void Place(PlayerCharacter pc, Vector3 position, Quaternion? facing) {
         Rigidbody body = pc.rb;
-        pc.transform.position = target;
-        if (turn) pc.transform.rotation = facing;
+        pc.transform.position = position;
+        if (facing.HasValue) pc.transform.rotation = facing.Value;
         if (body != null) {
-            body.position = target;
-            if (turn) body.rotation = facing;
+            body.position = position;
+            if (facing.HasValue) body.rotation = facing.Value;
             body.linearVelocity = Vector3.zero;
             body.angularVelocity = Vector3.zero;
         }
