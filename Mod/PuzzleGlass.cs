@@ -36,9 +36,9 @@ public class PuzzleGlass : MonoBehaviour {
 
     private static string LookName(PuzzleGlassStyle s) {
         switch (s) {
-            case PuzzleGlassStyle.Rippled: return "hhGlass_hifreq";   // the gourd boxes' glass
-            case PuzzleGlassStyle.Clear: return "hhGlass_lowfreq";
-            default: return "hhGlass";                                // most windows
+            case PuzzleGlassStyle.Rippled: return GameMaterialLooks.Of(GameMaterialType.GlassRippled).material;
+            case PuzzleGlassStyle.Clear: return GameMaterialLooks.Of(GameMaterialType.GlassClear).material;
+            default: return GameMaterialLooks.Of(GameMaterialType.GlassWindow).material;
         }
     }
 

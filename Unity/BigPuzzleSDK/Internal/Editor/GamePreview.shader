@@ -7,7 +7,6 @@ Shader "Hidden/BigPuzzleSDK/GamePreview" {
         _VertexColor ("Use vertex colours", Float) = 1
         _MainTex ("Picture", 2D) = "white" {}
         _UseTexture ("Picture: 0 off, 1 multiply, 2 peg tile (white = ink)", Float) = 0
-        _Cutoff ("Alpha below this is a hole (0 = none)", Float) = 0
         [HideInInspector] _SrcBlend ("", Float) = 1
         [HideInInspector] _DstBlend ("", Float) = 0
         [HideInInspector] _ZWrite ("", Float) = 1
@@ -30,7 +29,6 @@ Shader "Hidden/BigPuzzleSDK/GamePreview" {
             sampler2D _MainTex;
             float4 _MainTex_ST;
             float _UseTexture;
-            float _Cutoff;
 
             struct appdata { float4 vertex : POSITION; float3 normal : NORMAL; float4 color : COLOR; float2 uv : TEXCOORD0; };
             struct v2f { float4 pos : SV_POSITION; float3 normal : TEXCOORD0; float4 color : COLOR; float2 uv : TEXCOORD1; };
@@ -57,7 +55,6 @@ Shader "Hidden/BigPuzzleSDK/GamePreview" {
                     c.rgb *= 1.0 - ink * 0.92;
                 } else if (_UseTexture > 0.5) {
                     c *= tex2D(_MainTex, i.uv);
-                    if (_Cutoff > 0) clip(c.a - _Cutoff);   // grilles and wire mesh, as the game cuts them
                 }
                 return float4(c.rgb * light, c.a);   // (the picture's own see-through parts count too)
             }

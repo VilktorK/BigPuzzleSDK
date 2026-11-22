@@ -24,14 +24,15 @@ internal static class GlassFrames {
 
     // Painted: bars like the game's window frames, in its plain painted material, nearly black.
     // Rods: the metal fittings of the game's Blindfold Catwalk glass wall, orange-yellow.
-    internal static PuzzleGameMaterialType MaterialOf(PuzzleGlassFrame style) => style == PuzzleGlassFrame.Rods ? PuzzleGameMaterialType.Metal : PuzzleGameMaterialType.Painted;
+    internal static GameMaterialType MaterialOf(PuzzleGlassFrame style) => style == PuzzleGlassFrame.Rods ? GameMaterialType.Metal : GameMaterialType.Painted;
     internal static Color32 OwnColor(PuzzleGlassFrame style) => style == PuzzleGlassFrame.Rods ? new Color32(204, 132, 4, 255) : new Color32(8, 8, 8, 255);
 
     // The frame's mesh, painted in 'color' (white = the style's own colour) like the game's structures
     internal static Mesh Build(PuzzleGlassFrame style, Bounds bounds, Vector3 scale, float width, Color color) {
         Mesh mesh = Shape(style, bounds, scale, width);
         GameMaterialLook look = GameMaterialLooks.Of(MaterialOf(style));
-        GameMaterialLooks.Paint(mesh, scale, GameMaterialLooks.IsWhite(color) ? OwnColor(style) : (Color32)color, look.uvPerMetre);
+        Color32 paint = GameMaterialLooks.IsWhite(color) ? OwnColor(style) : (Color32)color;
+        GameMaterialLooks.Paint(mesh, scale, new[] { new GameMaterialLooks.SubmeshPaint(paint, look.uvPerMetre) });
         return mesh;
     }
 

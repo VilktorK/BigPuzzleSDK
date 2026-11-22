@@ -2553,8 +2553,9 @@ namespace BigPuzzleSDK {
                 SyncedStore.BeginPuzzle(BuildPackId);
                 int firstTicket = Tickets.BeginPuzzle(puzzlePack.name, startTicket);
 
-                // Only the creator's own objects need their shaders swapped, so do it before any
-                // vanilla copies are added to the puzzle
+                // Only the creator's own objects need their materials and shaders swapped, so do it
+                // before any vanilla copies are added to the puzzle
+                GameMaterials.ApplyTo(root);
                 FixShaders(root);
 
                 if (pack != null && pack.scripts != null) {

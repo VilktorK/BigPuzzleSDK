@@ -25,7 +25,7 @@ public static class GamePreviews {
         "PuzzleButton", "PuzzleSwitch", "PuzzleBox", "PuzzleDoor", "PuzzleGourdPlinth", "PuzzleGourdVice",
         "PuzzleLiveSignal", "PuzzlePegBoard", "PuzzlePegTile", "PuzzleStartSwitch", "PuzzleValidator",
         "PuzzleDisplay", "PuzzlePokeButton", "PuzzleProgressBar", "PuzzleSimPressSwitch", "PuzzleLight", "PuzzleTimer", "PuzzleConfetti",
-        "PuzzleGlass", "PuzzlePillow", "PuzzleTelescope", "PuzzleGameMaterial",
+        "PuzzleGlass", "PuzzlePillow", "PuzzleTelescope",
         // Batch scan (low-priority components)
         "PuzzleVanillaItem", "PuzzleCountInput", "PuzzleCountValidator", "PuzzleIntercom", "PuzzleIntercomSpeaker", "PuzzleListeningChair", "PuzzleDirectionalMic",
         "PuzzleSoundPeg", "PuzzleSoundPegAnswer", "PuzzleNoItemsGate", "PuzzleCirclePeg",
@@ -44,7 +44,7 @@ public static class GamePreviews {
     }
 
     // Components whose copy follows the creator's scale; all others keep the game's own size
-    internal static readonly HashSet<string> Scalable = new HashSet<string> { "PuzzleTimer", "PuzzleProgressBar", "PuzzleGlass", "PuzzleGameMaterial" };
+    internal static readonly HashSet<string> Scalable = new HashSet<string> { "PuzzleTimer", "PuzzleProgressBar", "PuzzleGlass" };
     private static readonly Dictionary<MonoBehaviour, Preview> previews = new Dictionary<MonoBehaviour, Preview>();
 
     private static double nextTick;
@@ -102,7 +102,7 @@ public static class GamePreviews {
 
     // Most components always use the game's own size in-game, so their object's scale is kept
     // at 1,1,1 to avoid a placeholder that looks bigger or smaller than what players will see.
-    // Only the timer, the progress bar, the glass and the game material can be scaled.
+    // Only the timer, the progress bar and the glass can be scaled.
     private static readonly HashSet<int> toldAboutScale = new HashSet<int>();
 
     private static void KeepUnscaled(MonoBehaviour c) {
@@ -113,7 +113,7 @@ public static class GamePreviews {
         EditorUtility.SetDirty(t);
         if (toldAboutScale.Add(c.GetInstanceID()))
             Debug.Log($"[PuzzleSDK] '{c.name}': {c.GetType().Name} always uses the game's own size, so its scale stays at 1,1,1. " +
-                      "(Only PuzzleTimer, PuzzleProgressBar, PuzzleGlass and PuzzleGameMaterial can be scaled; the Puzzle Sign has a Size field.)", c);
+                      "(Only PuzzleTimer, PuzzleProgressBar and PuzzleGlass can be scaled; the Puzzle Sign has a Size field.)", c);
     }
 
     // Moves every preview to where its component is now
@@ -236,7 +236,7 @@ public static class GamePreviews {
     }
 
     private static void Refresh(MonoBehaviour c) {
-        if (DrawsOverCreatorMeshes(c)) { RefreshCover(c); return; }
+        if (c is PuzzleGlass glass) { RefreshGlass(glass); return; }
         if (!BigWalkGameModels.Ready) { Remove(c); return; }
         string label = LabelFor(c);
         string key = label;
@@ -385,7 +385,7 @@ public static class GamePreviews {
         Follow();
     }
 
-    // ---- PuzzleGlass and PuzzleGameMaterial: drawn over the creator's own meshes (no game model needed) ----
+    // ---- PuzzleGlass: drawn over the creator's own meshes (no game model needed) ----
     // The Scene view shows this as the preview, and ProjectThumbnails draws the same in a prefab's thumbnail.
 
     // A mesh drawn over one of the creator's meshes, in that mesh's own space
@@ -394,24 +394,17 @@ public static class GamePreviews {
         public CoverDraw(Mesh mesh, Material[] materials) { this.mesh = mesh; this.materials = materials; localPosition = Vector3.zero; localScale = Vector3.one; }
     }
 
-    // One of the creator's meshes that a Glass or a Game Material changes in-game, and what it looks like then
+    // One of the creator's meshes that a Glass changes in-game, and what it looks like then
     internal sealed class Cover {
         public readonly MeshFilter target;
         public readonly List<CoverDraw> draws = new List<CoverDraw>();
         public Cover(MeshFilter target) { this.target = target; }
     }
 
-    internal static bool DrawsOverCreatorMeshes(MonoBehaviour c) => c is PuzzleGlass || c is PuzzleGameMaterial;
-
-    // The creator's meshes the component changes in-game (the active ones: the editor shows no others)
-    internal static List<MeshFilter> CoveredMeshes(MonoBehaviour c) {
+    // The creator's meshes the Glass changes in-game (the active ones: the editor shows no others)
+    internal static List<MeshFilter> GlassMeshes(PuzzleGlass glass) {
         var list = new List<MeshFilter>();
-        if (c is PuzzleGameMaterial gameMaterial) {
-            foreach (MeshFilter mf in gameMaterial.PaintedMeshes(false))
-                if (mf.sharedMesh.isReadable) list.Add(mf);   // (an unreadable mesh keeps its own material in-game too)
-            return list;
-        }
-        foreach (MeshFilter mf in c.GetComponentsInChildren<MeshFilter>(false))
+        foreach (MeshFilter mf in glass.GetComponentsInChildren<MeshFilter>(false))
             if (mf.sharedMesh != null && mf.GetComponent<Renderer>() != null) list.Add(mf);
         return list;
     }
@@ -425,7 +418,7 @@ public static class GamePreviews {
         public readonly float frameWidth;
         public readonly Color frameColor;
 
-        public GlassLook(MonoBehaviour glass) {
+        public GlassLook(PuzzleGlass glass) {
             var so = new SerializedObject(glass);
             SerializedProperty wireProp = so.FindProperty("wire");
             wire = wireProp != null && wireProp.boolValue;
@@ -438,57 +431,27 @@ public static class GamePreviews {
         public string Key => (wire ? "|wire" : "") + (frame ? "|frame " + frameStyle + " " + frameWidth.ToString("F4") + " " + ColorUtility.ToHtmlStringRGB(frameColor) : "");
     }
 
-    // Changes whenever what CoversOf draws changes
-    private static string CoverKey(MonoBehaviour c, List<MeshFilter> meshes) {
-        string key;
-        bool followsSize;   // the texture's scale, the wire's tiling and the frame follow the size
-        if (c is PuzzleGameMaterial gameMaterial) {
-            GameMaterialLook look = GameMaterialLooks.Of(gameMaterial.Material);
-            Texture2D texture = look.texture != null ? BigWalkGameModels.GetTexture(look.texture) : null;
-            key = "PuzzleGameMaterial|" + gameMaterial.Material + "|" + GameMaterialLooks.PaintFor(look, gameMaterial.Color) + "|" + (texture != null ? texture.GetInstanceID() : 0);
-            followsSize = true;
-        } else {
-            var glass = new GlassLook(c);
-            key = "PuzzleGlass" + glass.Key;
-            followsSize = glass.wire || glass.frame;
-        }
+    // Changes whenever what GlassCovers draws changes
+    private static string GlassKey(GlassLook glass, List<MeshFilter> meshes) {
+        string key = "PuzzleGlass" + glass.Key;
         foreach (MeshFilter mf in meshes) {
-            key += "|" + mf.GetInstanceID() + ":" + mf.sharedMesh.GetInstanceID() + ":" + mf.sharedMesh.vertexCount + ":" + mf.sharedMesh.subMeshCount;
-            if (followsSize) key += ":" + mf.transform.lossyScale.ToString("F3");
+            key += "|" + mf.GetInstanceID() + ":" + mf.sharedMesh.GetInstanceID() + ":" + mf.sharedMesh.subMeshCount;
+            if (glass.wire || glass.frame) key += ":" + mf.transform.lossyScale.ToString("F3");   // the wire's tiling and the frame follow the size
         }
         return key;
     }
 
-    // What each covered mesh looks like in-game, as the mod makes it. Meshes and materials made for it go
-    // into 'made', and the caller destroys them.
-    internal static List<Cover> CoversOf(MonoBehaviour c, List<MeshFilter> meshes, List<UnityEngine.Object> made) {
+    // What each of the Glass's meshes looks like in-game, as the mod makes it. Meshes and materials made for
+    // it go into 'made', and the caller destroys them.
+    internal static List<Cover> GlassCovers(PuzzleGlass glass, List<MeshFilter> meshes, List<UnityEngine.Object> made) {
+        var look = new GlassLook(glass);
         var covers = new List<Cover>();
-        if (c is PuzzleGameMaterial gameMaterial) {
-            GameMaterialLook look = GameMaterialLooks.Of(gameMaterial.Material);
-            Material material = GameMaterialPreview(look);
-            made.Add(material);
-            // The game's material multiplies its own tint in; the preview puts it into the vertex colours
-            Color32 paint = GameMaterialLooks.PaintFor(look, gameMaterial.Color);
-            paint = new Color32((byte)(paint.r * look.tint.r / 255), (byte)(paint.g * look.tint.g / 255), (byte)(paint.b * look.tint.b / 255), 255);
-            foreach (MeshFilter mf in meshes) {
-                Mesh painted = UnityEngine.Object.Instantiate(mf.sharedMesh);
-                painted.name = mf.sharedMesh.name + " (PuzzleGameMaterial)";
-                painted.hideFlags = HideFlags.HideAndDontSave;
-                GameMaterialLooks.Paint(painted, mf.transform.lossyScale, paint, look.uvPerMetre);
-                made.Add(painted);
-                var cover = new Cover(mf);
-                cover.draws.Add(new CoverDraw(painted, Fill(material, mf.sharedMesh)));
-                covers.Add(cover);
-            }
-            return covers;
-        }
-        var glass = new GlassLook(c);
         foreach (MeshFilter mf in meshes) {
             var cover = new Cover(mf);
             cover.draws.Add(new CoverDraw(mf.sharedMesh, Fill(MaterialFor(Kind.Glass), mf.sharedMesh)));
-            if (glass.wire) cover.draws.Add(WireDraw(mf, made));
-            if (glass.frame) {
-                Mesh frame = GlassFrames.Build(glass.frameStyle, mf.sharedMesh.bounds, mf.transform.lossyScale, glass.frameWidth, glass.frameColor);
+            if (look.wire) cover.draws.Add(WireDraw(mf, made));
+            if (look.frame) {
+                Mesh frame = GlassFrames.Build(look.frameStyle, mf.sharedMesh.bounds, mf.transform.lossyScale, look.frameWidth, look.frameColor);
                 frame.hideFlags = HideFlags.HideAndDontSave;
                 made.Add(frame);
                 cover.draws.Add(new CoverDraw(frame, new[] { MaterialFor(Kind.VertexColor) }));
@@ -504,24 +467,9 @@ public static class GamePreviews {
         return mats;
     }
 
-    // A structure material of the game as the preview shader shows it: the vertex colours times its texture
-    private static Material GameMaterialPreview(GameMaterialLook look) {
-        MaterialFor(Kind.VertexColor);
-        Material m = Make(vertexColor.shader, Color.white, true, false);
-        Texture2D texture = look.texture != null ? BigWalkGameModels.GetTexture(look.texture) : null;
-        if (texture != null) {
-            texture.wrapMode = TextureWrapMode.Repeat;   // (read in as Clamp, for the image sheets)
-            m.SetFloat("_UseTexture", 1f);
-            m.SetTexture("_MainTex", texture);
-            m.SetTextureScale("_MainTex", new Vector2(look.tileX, look.tileY));
-            m.SetFloat("_Cutoff", look.cutoff);   // the grilles' holes
-        }
-        return m;
-    }
-
-    private static void RefreshCover(MonoBehaviour c) {
-        List<MeshFilter> meshes = CoveredMeshes(c);
-        string key = CoverKey(c, meshes);
+    private static void RefreshGlass(PuzzleGlass c) {
+        List<MeshFilter> meshes = GlassMeshes(c);
+        string key = GlassKey(new GlassLook(c), meshes);
         if (previews.TryGetValue(c, out Preview existing)) {
             if (existing.key == key && existing.root != null) return;
             Remove(c);
@@ -534,7 +482,7 @@ public static class GamePreviews {
         else if (c.gameObject.scene.IsValid()) SceneManager.MoveGameObjectToScene(root, c.gameObject.scene);
         var preview = new Preview { root = root, key = key, worldScale = Vector3.one,
             followers = new List<(Transform, Transform)>(), hidden = new List<Renderer>(), made = new List<UnityEngine.Object>() };
-        foreach (Cover cover in CoversOf(c, meshes, preview.made)) {
+        foreach (Cover cover in GlassCovers(c, meshes, preview.made)) {
             var copy = new GameObject(Prefix + " " + cover.target.name) { hideFlags = HideFlags.HideAndDontSave, layer = cover.target.gameObject.layer };
             copy.transform.SetParent(root.transform, false);
             foreach (CoverDraw draw in cover.draws) {

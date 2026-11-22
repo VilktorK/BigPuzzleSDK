@@ -75,14 +75,7 @@ internal static class PuzzleChecks {
             if (Bool(glassSo, "frame") && painted && width != null && width.floatValue <= 0f)
                 list.Add("Frame is on, but Frame Width is 0, so there is no frame.");
         }
-        if (c is PuzzleGameMaterial gameMaterial) {
-            List<MeshFilter> painted = gameMaterial.PaintedMeshes(true);
-            if (painted.Count == 0)
-                list.Add("No mesh gets the material. Put this on an object with a Mesh Renderer, or on the parent of some. Objects with another SDK component (Glass, a button, a door, a custom item, ...) keep their own look.");
-            foreach (MeshFilter mf in painted)
-                if (!mf.sharedMesh.isReadable)
-                    list.Add($"'{mf.name}' uses the mesh '{mf.sharedMesh.name}', which the game can't read, so it keeps its own material. Turn on Read/Write in its model's import settings.");
-        }
+        if (c is Renderer renderer) CheckGameMaterials(renderer, list);
 
         if (c is PuzzleTimer) {
             var so = new SerializedObject(c);
@@ -375,6 +368,44 @@ internal static class PuzzleChecks {
         foreach (var call in Calls(hold, "onPressed"))
             if (call.target is PuzzleGourdPlinth && seen.Contains(call.target))
                 list.Add($"The PuzzleButton's On Pressed also opens {Label(call.target)}. Leave it out: the Tower Button opens the plinths.");
+    }
+
+    // A renderer with Game Materials (BigPuzzleSDK/Materials). In-game the mod paints its mesh for each one
+    // that isn't glass, as GameMaterials.ApplyTo does: so the renderer needs a readable mesh.
+    private static void CheckGameMaterials(Renderer r, List<string> list) {
+        Material[] mats = r.sharedMaterials;
+        var looks = new string[mats.Length];   // per slot: what the mod paints its submesh with, or null
+        bool paints = false;
+        for (int i = 0; i < mats.Length; i++) {
+            if (!GameMaterialLooks.TryGetType(mats[i], out GameMaterialType type)) continue;
+            GameMaterialLook look = GameMaterialLooks.Of(type);
+            if (!look.paints) continue;
+            looks[i] = type + " " + GameMaterialLooks.PaintFor(look, mats[i].GetColor(GameMaterialLooks.ColorProperty));
+            paints = true;
+        }
+        if (!paints) return;
+        MeshFilter filter = r is MeshRenderer ? r.GetComponent<MeshFilter>() : null;
+        Mesh mesh = filter != null ? filter.sharedMesh : null;
+        if (mesh == null) {
+            list.Add("Game Materials other than glass need a Mesh Renderer with a mesh. In-game this renderer keeps the SDK's materials.");
+            return;
+        }
+        if (!mesh.isReadable) {
+            list.Add($"The mesh '{mesh.name}' isn't readable, so in-game it keeps the SDK's materials. Turn on Read/Write in its model's import settings.");
+            return;
+        }
+        // The mod paints each vertex once: a vertex that two submeshes with different paint share gets one of them
+        var owner = new string[mesh.vertexCount];
+        for (int s = 0; s < mats.Length && s < mesh.subMeshCount; s++) {
+            if (looks[s] == null) continue;
+            foreach (int v in mesh.GetIndices(s)) {
+                if (owner[v] != null && owner[v] != looks[s]) {
+                    list.Add($"The mesh '{mesh.name}' shares vertices between submeshes with different Game Materials, so their edges blend in-game. Turn off Weld Vertices in its model's import settings.");
+                    return;
+                }
+                owner[v] = looks[s];
+            }
+        }
     }
 
     private static bool Bool(SerializedObject so, string name) {
@@ -903,7 +934,6 @@ internal class PuzzlePresenceSensorEditor : PuzzleComponentEditor {
 [CustomEditor(typeof(PuzzleRadioDeadZone))] internal class PuzzleRadioDeadZoneEditor : PuzzleComponentEditor { }
 [CustomEditor(typeof(PuzzleReverbZone))] internal class PuzzleReverbZoneEditor : PuzzleComponentEditor { }
 [CustomEditor(typeof(PuzzleTerrainHole))] internal class PuzzleTerrainHoleEditor : PuzzleComponentEditor { }
-[CustomEditor(typeof(PuzzleGameMaterial))] internal class PuzzleGameMaterialEditor : PuzzleComponentEditor { }
 
 }
 #endif

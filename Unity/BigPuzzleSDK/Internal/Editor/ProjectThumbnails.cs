@@ -99,7 +99,7 @@ public static class ProjectThumbnails {
     private static Texture2D Render(GameObject prefab, out bool hasSdk) {
         var draws = new List<Draw>();
         var sdkObjects = new HashSet<GameObject>();
-        var covered = new HashSet<GameObject>();   // the creator's meshes a Glass or a Game Material draws over
+        var covered = new HashSet<GameObject>();   // the creator's meshes a Glass draws over
         hasSdk = false;
         Vector3 dir = new Vector3(0.55f, 0.45f, 0.7f);   // the game objects face +Z
         bool onlyGlass = true;   // every SDK component here is a PuzzleGlass
@@ -108,8 +108,8 @@ public static class ProjectThumbnails {
             if (!GamePreviews.IsSdkComponent(c)) continue;
             hasSdk = true;
             if (c.GetType().Name != "PuzzleGlass") onlyGlass = false;
-            if (GamePreviews.DrawsOverCreatorMeshes(c)) {   // as the Scene view shows it
-                foreach (GamePreviews.Cover cover in GamePreviews.CoversOf(c, GamePreviews.CoveredMeshes(c), made)) {
+            if (c is PuzzleGlass glass) {   // as the Scene view shows it
+                foreach (GamePreviews.Cover cover in GamePreviews.GlassCovers(glass, GamePreviews.GlassMeshes(glass), made)) {
                     covered.Add(cover.target.gameObject);
                     Matrix4x4 at = cover.target.transform.localToWorldMatrix;
                     foreach (GamePreviews.CoverDraw d in cover.draws)
