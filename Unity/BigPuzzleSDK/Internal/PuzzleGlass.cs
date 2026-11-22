@@ -24,6 +24,18 @@ public class PuzzleGlass : MonoBehaviour {
 
     [Tooltip("Adds the black wire mesh the game's soundproof windows have, just inside the glass.")]
     [SerializeField] private bool wire;
+
+    [Tooltip("Adds a frame around the pane. Frame Style picks which.")]
+    [SerializeField] private bool frame;
+
+    [Tooltip("Painted: four bars over the edges, like the game's window frames. Rods: a metal band around the edges, held by rods to strips 30 cm out from each edge, like the glass wall of the game's Blindfold Catwalk.")]
+    [SerializeField] private PuzzleGlassFrame frameStyle;
+
+    [Tooltip("Painted frame only: how wide each bar is, in metres.")]
+    [SerializeField] private float frameWidth = 0.05f;
+
+    [Tooltip("The frame's colour. White (#FFFFFF) keeps the game's usual colour: nearly black for Painted, orange-yellow for Rods.")]
+    [SerializeField] private Color frameColor = Color.white;
 }
 
 #if UNITY_EDITOR

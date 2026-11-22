@@ -1,6 +1,4 @@
 using System;
-using System.Collections.Generic;
-using Il2CppInterop.Runtime;
 using UnityEngine;
 
 namespace BigPuzzleSDK {
@@ -20,16 +18,20 @@ public class PuzzleGlass : MonoBehaviour {
     public PuzzleGlass(IntPtr ptr) : base(ptr) { }
 
     private const int GlassLayer = 17;
+    private const int WorldLayer = 10;   // where the exporter puts the creator's own objects
 
     // Set in the Inspector; the names must match the Unity-side fields
     internal PuzzleGlassStyle style;
     internal PuzzleGlassSound sound;
     internal bool wire;                      // the black wire mesh of the game's soundproof windows
     private const float WireTilesPerMeter = 6f;   // how many times the wire picture repeats per metre
+    internal bool frame;                     // a frame around the pane (GlassFrames builds it)
+    internal PuzzleGlassFrame frameStyle;
+    internal float frameWidth;               // metres, Painted only
+    internal Color frameColor;               // white = the style's usual colour
 
     private const string WireMaterialName = GameRefs.Glass.WireMaterialName;
 
-    private static readonly Dictionary<string, Material> looks = new Dictionary<string, Material>();
     private bool set;
 
     private static string LookName(PuzzleGlassStyle s) {
@@ -55,7 +57,7 @@ public class PuzzleGlass : MonoBehaviour {
         try {
             // Looks
             string lookName = LookName(style);
-            Material look = FindLook(lookName);
+            Material look = GameMaterials.Find(lookName);
             if (look == null) log.LogWarning($"[PuzzleGlass] the game's '{lookName}' material wasn't found; '{name}' keeps its own material.");
             int renderers = 0;
             foreach (Renderer r in GetComponentsInChildren<Renderer>(true)) {
@@ -67,6 +69,7 @@ public class PuzzleGlass : MonoBehaviour {
                 }
                 r.gameObject.layer = GlassLayer;
                 if (wire) AddWire(r);
+                if (frame) AddFrame(r);
                 renderers++;
             }
             if (renderers == 0) log.LogWarning($"[PuzzleGlass] '{name}' has no renderer, so there is no glass to see.");
@@ -98,7 +101,7 @@ public class PuzzleGlass : MonoBehaviour {
         MeshFilter filter = glass.GetComponent<MeshFilter>();
         Mesh mesh = filter != null ? filter.sharedMesh : null;
         if (mesh == null) return;
-        Material source = FindLook(WireMaterialName);
+        Material source = GameMaterials.Find(WireMaterialName);
         if (source == null) {
             Plugin.log.LogWarning($"[PuzzleGlass] the game's '{WireMaterialName}' material wasn't found; '{name}' has no wire.");
             return;
@@ -133,13 +136,24 @@ public class PuzzleGlass : MonoBehaviour {
         renderer.sharedMaterials = mats;
     }
 
-    private static Material FindLook(string wanted) {
-        if (looks.TryGetValue(wanted, out Material known) && known != null) return known;
-        foreach (UnityEngine.Object o in Resources.FindObjectsOfTypeAll(Il2CppType.Of<Material>())) {
-            Material m = o.TryCast<Material>();
-            if (m != null && m.name == wanted) { looks[wanted] = m; return m; }
+    // The frame around the pane, painted and textured like the game's structures (see GlassFrames)
+    private void AddFrame(Renderer glass) {
+        MeshFilter filter = glass.GetComponent<MeshFilter>();
+        Mesh paneMesh = filter != null ? filter.sharedMesh : null;
+        if (paneMesh == null) return;
+        string lookName = GameMaterialLooks.Of(GlassFrames.MaterialOf(frameStyle)).material;
+        Material material = GameMaterials.Find(lookName);
+        if (material == null) {
+            Plugin.log.LogWarning($"[PuzzleGlass] the game's '{lookName}' material wasn't found; '{name}' has no frame.");
+            return;
         }
-        return null;
+
+        Mesh mesh = GlassFrames.Build(frameStyle, paneMesh.bounds, glass.transform.lossyScale, frameWidth, frameColor);
+        var go = new GameObject("PuzzleGlass frame");
+        go.layer = WorldLayer;
+        go.transform.SetParent(glass.transform, false);
+        go.AddComponent<MeshFilter>().sharedMesh = mesh;
+        go.AddComponent<MeshRenderer>().sharedMaterial = material;
     }
 }
 

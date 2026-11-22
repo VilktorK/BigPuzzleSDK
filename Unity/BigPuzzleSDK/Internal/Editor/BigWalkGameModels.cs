@@ -19,7 +19,7 @@ public static class BigWalkGameModels {
     private const string DefaultPath = WindowsSteam + @"\steamapps\common\Big Walk\Big Walk_Data\data.unity3d";
     private const string PathPref = "BigPuzzleSDK.GameDataPath";
     private const string AskedKey = "BigPuzzleSDK.AskedForGame";   // per editor session
-    private const string CacheMagic = "BPSDK-GM8";
+    private const string CacheMagic = "BPSDK-GM10";
 
     private static readonly Dictionary<string, Mesh> meshes = new Dictionary<string, Mesh>();
     private static readonly Dictionary<string, Texture2D> textures = new Dictionary<string, Texture2D>();
@@ -27,6 +27,15 @@ public static class BigWalkGameModels {
 
     public static bool Ready => loaded && meshes.Count > 0;
     public static event Action Changed;
+
+    // Every game texture the editor reads: the image sheets, then the Game Material's preview textures
+    private static readonly string[] Textures = AllTextures();
+
+    private static string[] AllTextures() {
+        var all = new List<string>(PreviewTable.Sheets);
+        foreach (string texture in GameMaterialLooks.Textures()) if (!all.Contains(texture)) all.Add(texture);
+        return all.ToArray();
+    }
 
     private static string CacheFile => Path.GetFullPath(Path.Combine(Application.dataPath, "..", "Library", "BigPuzzleSDK", "GameModels.cache"));
 
@@ -151,7 +160,7 @@ public static class BigWalkGameModels {
             EditorUtility.DisplayProgressBar("Big Puzzle SDK", "Opening Big Walk's data...", 0f);
             using (var assets = new GameAssets(game, (what, p) => EditorUtility.DisplayProgressBar("Big Puzzle SDK", what, p * 0.5f))) {
                 int i = 0;
-                int steps = PreviewTable.Meshes.Length + PreviewTable.Slices.Length + PreviewTable.Sheets.Length;
+                int steps = PreviewTable.Meshes.Length + PreviewTable.Slices.Length + Textures.Length;
                 foreach (Slice slice in PreviewTable.Slices) {
                     i++;
                     EditorUtility.DisplayProgressBar("Big Puzzle SDK", "Reading model " + slice.name, 0.5f + 0.5f * i / steps);
@@ -163,15 +172,15 @@ public static class BigWalkGameModels {
                         problems.Add(slice.name + ": " + ex.Message);
                     }
                 }
-                foreach (string sheet in PreviewTable.Sheets) {
+                foreach (string texture in Textures) {
                     i++;
-                    EditorUtility.DisplayProgressBar("Big Puzzle SDK", "Reading image sheet " + sheet, 0.5f + 0.5f * i / steps);
+                    EditorUtility.DisplayProgressBar("Big Puzzle SDK", "Reading texture " + texture, 0.5f + 0.5f * i / steps);
                     try {
-                        RippedTexture t = assets.ReadTexture(sheet);
-                        if (t == null) { problems.Add(sheet + " (image sheet not in the game any more)"); continue; }
+                        RippedTexture t = assets.ReadTexture(texture);
+                        if (t == null) { problems.Add(texture + " (texture not in the game any more)"); continue; }
                         rippedTextures.Add(t);
                     } catch (GameAssetException ex) {
-                        problems.Add(sheet + ": " + ex.Message);
+                        problems.Add(texture + ": " + ex.Message);
                     }
                 }
                 foreach (var (name, vertices) in PreviewTable.Meshes) {
@@ -200,7 +209,7 @@ public static class BigWalkGameModels {
         catch (Exception ex) { Debug.LogWarning("[PuzzleSDK] Could not write the game model cache: " + ex.Message); }
         Use(ripped, rippedTextures);
         int wanted = PreviewTable.Meshes.Length + PreviewTable.Slices.Length;
-        Debug.Log($"[PuzzleSDK] Read {ripped.Count} of {wanted} game models and {rippedTextures.Count} of {PreviewTable.Sheets.Length} image sheets in {(DateTime.Now - started).TotalSeconds:0.0}s.");
+        Debug.Log($"[PuzzleSDK] Read {ripped.Count} of {wanted} game models and {rippedTextures.Count} of {Textures.Length} textures in {(DateTime.Now - started).TotalSeconds:0.0}s.");
         if (problems.Count > 0) Debug.LogWarning("[PuzzleSDK] Some game models had problems:\n  " + string.Join("\n  ", problems));
         return ripped.Count > 0;
     }
@@ -304,7 +313,7 @@ public static class BigWalkGameModels {
         }
         foreach (RippedTexture t in texList) {
             try { textures[t.name] = ToUnity(t); }
-            catch (Exception ex) { Debug.LogWarning($"[PuzzleSDK] Game image sheet '{t.name}' (format {t.format}) couldn't be loaded: {ex.Message}"); }
+            catch (Exception ex) { Debug.LogWarning($"[PuzzleSDK] Game texture '{t.name}' (format {t.format}) couldn't be loaded: {ex.Message}"); }
         }
         loaded = true;
         Changed?.Invoke();

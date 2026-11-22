@@ -65,4 +65,10 @@
 		<EmbeddedResource Include="DefaultTower.puzzlepack" LogicalName="BigPuzzleSDK.DefaultTower.puzzlepack" />
 	</ItemGroup>
 
+  <!-- Code the Unity package compiles too, so the editor preview and the game work the same way -->
+  <ItemGroup>
+    <Compile Include="..\Unity\BigPuzzleSDK\Internal\GameMaterialLooks.cs" Link="Shared\GameMaterialLooks.cs" />
+    <Compile Include="..\Unity\BigPuzzleSDK\Internal\GlassFrames.cs" Link="Shared\GlassFrames.cs" />
+  </ItemGroup>
+
 </Project>

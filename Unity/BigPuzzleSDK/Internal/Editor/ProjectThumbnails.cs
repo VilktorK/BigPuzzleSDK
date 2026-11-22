@@ -94,10 +94,12 @@ public static class ProjectThumbnails {
     };
 
     private static readonly List<GameObject> temporary = new List<GameObject>();
+    private static readonly List<UnityEngine.Object> made = new List<UnityEngine.Object>();   // meshes and materials of one thumbnail
 
     private static Texture2D Render(GameObject prefab, out bool hasSdk) {
         var draws = new List<Draw>();
         var sdkObjects = new HashSet<GameObject>();
+        var covered = new HashSet<GameObject>();   // the creator's meshes a Glass or a Game Material draws over
         hasSdk = false;
         Vector3 dir = new Vector3(0.55f, 0.45f, 0.7f);   // the game objects face +Z
         bool onlyGlass = true;   // every SDK component here is a PuzzleGlass
@@ -106,6 +108,15 @@ public static class ProjectThumbnails {
             if (!GamePreviews.IsSdkComponent(c)) continue;
             hasSdk = true;
             if (c.GetType().Name != "PuzzleGlass") onlyGlass = false;
+            if (GamePreviews.DrawsOverCreatorMeshes(c)) {   // as the Scene view shows it
+                foreach (GamePreviews.Cover cover in GamePreviews.CoversOf(c, GamePreviews.CoveredMeshes(c), made)) {
+                    covered.Add(cover.target.gameObject);
+                    Matrix4x4 at = cover.target.transform.localToWorldMatrix;
+                    foreach (GamePreviews.CoverDraw d in cover.draws)
+                        draws.Add(new Draw { mesh = d.mesh, matrix = at * Matrix4x4.TRS(d.localPosition, Quaternion.identity, d.localScale), materials = d.materials });
+                }
+                continue;
+            }
             string label = GamePreviews.LabelFor(c);
             Template template = PreviewTable.Find(label);
             if (template == null || template.parts.Length == 0) continue;
@@ -137,7 +148,7 @@ public static class ProjectThumbnails {
 
         // The creator's own meshes (except the placeholders the game models replace)
         foreach (MeshRenderer r in prefab.GetComponentsInChildren<MeshRenderer>(true)) {
-            if (sdkObjects.Contains(r.gameObject) || !r.enabled || !r.gameObject.activeInHierarchy) continue;
+            if (sdkObjects.Contains(r.gameObject) || covered.Contains(r.gameObject) || !r.enabled || !r.gameObject.activeInHierarchy) continue;
             MeshFilter f = r.GetComponent<MeshFilter>();
             if (f == null || f.sharedMesh == null) continue;
             draws.Add(new Draw { mesh = f.sharedMesh, matrix = r.transform.localToWorldMatrix, materials = r.sharedMaterials });
@@ -223,6 +234,8 @@ public static class ProjectThumbnails {
     private static void CleanTemporary() {
         foreach (GameObject go in temporary) if (go != null) UnityEngine.Object.DestroyImmediate(go);
         temporary.Clear();
+        foreach (UnityEngine.Object o in made) if (o != null) UnityEngine.Object.DestroyImmediate(o);
+        made.Clear();
     }
 
     private static Bounds TransformBounds(Bounds b, Matrix4x4 m) {

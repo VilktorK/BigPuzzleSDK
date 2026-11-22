@@ -68,6 +68,21 @@ internal static class PuzzleChecks {
             list.Add("No collider on this object or its children, so it blocks nothing. Add colliders that cover the walls.");
         if (c is PuzzleGlass && c.GetComponentsInChildren<Collider>(true).Length == 0)
             list.Add("No collider, so players walk straight through. Add a Box Collider.");
+        if (c is PuzzleGlass) {
+            var glassSo = new SerializedObject(c);
+            SerializedProperty width = glassSo.FindProperty("frameWidth");
+            bool painted = glassSo.FindProperty("frameStyle").enumValueIndex == (int)PuzzleGlassFrame.Painted;
+            if (Bool(glassSo, "frame") && painted && width != null && width.floatValue <= 0f)
+                list.Add("Frame is on, but Frame Width is 0, so there is no frame.");
+        }
+        if (c is PuzzleGameMaterial gameMaterial) {
+            List<MeshFilter> painted = gameMaterial.PaintedMeshes(true);
+            if (painted.Count == 0)
+                list.Add("No mesh gets the material. Put this on an object with a Mesh Renderer, or on the parent of some. Objects with another SDK component (Glass, a button, a door, a custom item, ...) keep their own look.");
+            foreach (MeshFilter mf in painted)
+                if (!mf.sharedMesh.isReadable)
+                    list.Add($"'{mf.name}' uses the mesh '{mf.sharedMesh.name}', which the game can't read, so it keeps its own material. Turn on Read/Write in its model's import settings.");
+        }
 
         if (c is PuzzleTimer) {
             var so = new SerializedObject(c);
@@ -888,6 +903,7 @@ internal class PuzzlePresenceSensorEditor : PuzzleComponentEditor {
 [CustomEditor(typeof(PuzzleRadioDeadZone))] internal class PuzzleRadioDeadZoneEditor : PuzzleComponentEditor { }
 [CustomEditor(typeof(PuzzleReverbZone))] internal class PuzzleReverbZoneEditor : PuzzleComponentEditor { }
 [CustomEditor(typeof(PuzzleTerrainHole))] internal class PuzzleTerrainHoleEditor : PuzzleComponentEditor { }
+[CustomEditor(typeof(PuzzleGameMaterial))] internal class PuzzleGameMaterialEditor : PuzzleComponentEditor { }
 
 }
 #endif
