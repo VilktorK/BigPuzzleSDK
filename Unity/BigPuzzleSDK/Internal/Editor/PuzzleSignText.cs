@@ -14,7 +14,7 @@ internal static class PuzzleSignText {
 
     private static void Check() {
         if (EditorApplication.isPlayingOrWillChangePlaymode) return;
-        foreach (PuzzleSign sign in Object.FindObjectsByType<PuzzleSign>(FindObjectsInactive.Exclude, FindObjectsSortMode.None)) {
+        foreach (PuzzleSign sign in Object.FindObjectsByType<PuzzleSign>(FindObjectsInactive.Include, FindObjectsSortMode.None)) {
             var so = new SerializedObject(sign);
             SerializedProperty made = so.FindProperty("textMade");
             if (made == null || made.boolValue) continue;

@@ -459,7 +459,7 @@
 <p><strong>Hold At End:</strong> pressing does nothing during a phase. When the time is up the lit pair's button must be held and no other, or it fails. Use Hold Buttons or Presence Sensors; a Poke Button can't be held.</p>
 <h3 id="hider">Hider</h3>
 <p><code>PuzzleHider</code></p>
-<p>Keeps this object and everything under it only in the ticked lobby sizes. In other sizes it is switched off and SDK components under it aren't built. Events skip the functions you wired to anything under it. Use it for 2-, 3- and 4-player versions of a room, or of the whole puzzle: put each version under its own Hider, and wire the Puzzle SDK's events to every version.</p>
+<p>Keeps this object and everything under it only in the ticked lobby sizes. When the puzzle loads, the Hider switches the object on in the ticked sizes, even if you switched it off in the editor. So you can switch off the versions you aren't working on. In other sizes it is switched off and SDK components under it aren't built. Events skip the functions you wired to anything under it. Use it for 2-, 3- and 4-player versions of a room, or of the whole puzzle: put each version under its own Hider, and wire the Puzzle SDK's events to every version.</p>
 <div class="table-wrap"><table>
 <thead>
 <tr>

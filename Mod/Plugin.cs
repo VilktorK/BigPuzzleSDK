@@ -217,7 +217,6 @@ namespace BigPuzzleSDK {
             // Host > Puzzle SDK: the creator menu, and the test session it starts
             CreatorMenu.Tick();
             TestSession.Tick();
-            RelayProbe.Tick();
 
             // Creator keys (see Plugin.DevFolder): only when a dev puzzle is installed, and only with Ctrl held,
             // so they can't be hit by accident while playing

@@ -5,10 +5,11 @@ using UnityEngine;
 
 namespace BigPuzzleSDK {
 
-// Keeps this object, and everything under it, only in the lobby sizes ticked below. In the
-// others it is switched off when the puzzle loads, and SDK components under it aren't built.
+// Keeps this object, and everything under it, only in the lobby sizes ticked below. When the puzzle
+// loads, it is switched on in those sizes, even if it is off in the editor. In the others it is switched
+// off, and SDK components under it aren't built.
 // Use it for player-count versions of a room, e.g. a 2-player wall and a 4-player wall.
-[PuzzleInfo("Keeps this object only in the lobby sizes selected below. In the others it is switched off when the puzzle loads.")]
+[PuzzleInfo("Keeps this object only in the lobby sizes selected below. When the puzzle loads, it is switched on in those sizes, even if it is off in the editor, and switched off in the others.")]
 [AddComponentMenu("Big Puzzle SDK/Hider")]
 public class PuzzleHider : MonoBehaviour {
     [Tooltip("Show in 2-player lobbies.")]

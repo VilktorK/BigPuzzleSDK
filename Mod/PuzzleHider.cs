@@ -5,8 +5,9 @@ using UnityEngine;
 namespace BigPuzzleSDK {
 
     // Runtime (mod) version of the SDK's PuzzleHider: keeps this object (and everything under it)
-    // only in the lobby sizes ticked in the Inspector. In the others it is switched off before the
-    // puzzle wakes up, and no SDK component under it is set up (no game copies, nothing spawned).
+    // only in the lobby sizes ticked in the Inspector. The Hider owns the object's active state: in the
+    // ticked sizes it is switched on, even if it was off in the editor, and in the others it is switched
+    // off before the puzzle wakes up, and no SDK component under it is set up (no game copies, nothing spawned).
     //
     // The lobby size is the game's own: PlayerCountSwapper.playerCount, the static value every
     // PlayerCountSwapper in the game reads to pick its 2/3/4-player version of a challenge.
@@ -25,10 +26,10 @@ namespace BigPuzzleSDK {
         internal void SetupHider() {
             int players = LobbySize();
             bool show = players == 2 ? show2 : players == 3 ? show3 : show4;
+            gameObject.SetActive(show);
             if (show) return;
             hidden.RemoveAll(t => t == null);
             hidden.Add(transform);
-            gameObject.SetActive(false);
         }
 
         // True if this object is, or is inside, an object a PuzzleHider switched off
